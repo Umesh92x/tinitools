@@ -35,7 +35,7 @@ export default function JsonLd() {
       id="json-ld"
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      strategy="worker"
+      strategy="afterInteractive"
     />
   );
 } 

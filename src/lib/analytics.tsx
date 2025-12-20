@@ -3,7 +3,6 @@
 import Script from 'next/script'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
-import config from './config'
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX' // Replace with your GA ID
 
@@ -107,7 +106,10 @@ function AnalyticsContent() {
 }
 
 export function Analytics() {
-  if (!config.isProd || !config.gaId) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+  const isProd = process.env.NODE_ENV === 'production';
+  
+  if (!isProd || !gaId) {
     return null;
   }
 
@@ -115,7 +117,7 @@ export function Analytics() {
     <>
       <Script
         strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${config.gaId}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
       />
       <Script
         id="google-analytics"
@@ -125,7 +127,7 @@ export function Analytics() {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${config.gaId}', {
+            gtag('config', '${gaId}', {
               page_path: window.location.pathname,
               debug_mode: false
             });
