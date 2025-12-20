@@ -14,7 +14,7 @@ export const config: Config = {
 
 // Validate required environment variables in production
 if (config.isProd) {
-  const required = ['NEXT_PUBLIC_SITE_URL', 'NEXT_PUBLIC_GA_ID'];
+  const required = ['NEXT_PUBLIC_SITE_URL'];
   for (const key of required) {
     if (!process.env[key]) {
       throw new Error(`Missing required environment variable: ${key}`);
