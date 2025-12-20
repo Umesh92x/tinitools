@@ -1,4 +1,5 @@
 import Script from 'next/script';
+import config from '@/lib/config';
 
 export default function JsonLd() {
   const jsonLd = {
@@ -6,7 +7,7 @@ export default function JsonLd() {
     '@type': 'WebApplication',
     name: 'TiniTools',
     description: 'Your one-stop collection of free online utilities. Simple, fast, and free tools for everyday use.',
-    url: 'https://tinitools.com',
+    url: config.siteUrl,
     applicationCategory: 'UtilitiesApplication',
     operatingSystem: 'Any',
     offers: {
@@ -17,7 +18,7 @@ export default function JsonLd() {
     author: {
       '@type': 'Organization',
       name: 'TiniTools',
-      url: 'https://tinitools.com',
+      url: config.siteUrl,
     },
     aggregateRating: {
       '@type': 'AggregateRating',

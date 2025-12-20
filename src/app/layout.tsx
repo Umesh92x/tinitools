@@ -7,6 +7,7 @@ import { Analytics } from "@/lib/analytics";
 import Script from 'next/script';
 import { Suspense } from 'react';
 import JsonLd from "@/components/layout/JsonLd";
+import config from "@/lib/config";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -15,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://tinitools.com'),
+  metadataBase: new URL(config.siteUrl),
   title: {
     default: "TiniTools - Free Online Utilities & Tools Collection",
     template: "%s | TiniTools - Free Online Tools",
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://tinitools.com",
+    url: config.siteUrl,
     siteName: "TiniTools",
     title: "TiniTools - Free Online Utilities & Tools Collection",
     description: "Your one-stop collection of free online utilities. Simple, fast, and free tools for everyday use.",
@@ -86,7 +87,7 @@ export const metadata: Metadata = {
     yandex: 'add-your-yandex-verification-here',
   },
   alternates: {
-    canonical: 'https://tinitools.com',
+    canonical: config.siteUrl,
   },
   category: 'technology',
 };

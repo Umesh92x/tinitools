@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next'
+import config from '@/lib/config'
 
-const baseUrl = 'https://tinitools.com' // Replace with your actual domain
+const baseUrl = config.siteUrl
 
 export default function sitemap(): MetadataRoute.Sitemap {
   // Get all tool categories and their tools

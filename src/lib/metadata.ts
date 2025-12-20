@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import config from './config'
 
 interface GenerateMetadataProps {
   title: string
@@ -15,7 +16,7 @@ export function generateMetadata({
   keywords = [],
   imageUrl = '/og-image.jpg',
 }: GenerateMetadataProps): Metadata {
-  const url = `https://tinitools.com${path}`
+  const url = `${config.siteUrl}${path}`
 
   return {
     title: {
