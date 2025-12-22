@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { AdUnit } from '@/components/ads/AdUnit'
 import { Toast } from '@/components/ui/Toast'
-import { diffLines, Change } from 'diff'
+import { diffWords, diffChars, Change } from 'diff'
 
 type ViewMode = 'unified' | 'split'
+type DiffMode = 'words' | 'chars'
 
 interface MarkerInfo {
   position: number
@@ -20,8 +21,15 @@ export function TextDiffChecker() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
-  const [diffStats, setDiffStats] = useState({ added: 0, removed: 0, unchanged: 0 })
+  const [diffStats, setDiffStats] = useState({ 
+    added: 0, 
+    removed: 0, 
+    unchanged: 0, 
+    addedWords: 0, 
+    removedWords: 0 
+  })
   const [viewMode, setViewMode] = useState<ViewMode>('split')
+  const [diffMode, setDiffMode] = useState<DiffMode>('words')
   const [highlightedLines, setHighlightedLines] = useState<number[]>([])
   const diffContainerRef = useRef<HTMLDivElement>(null)
 
@@ -113,76 +121,71 @@ export function TextDiffChecker() {
     )
   }
 
+  const renderTextWithHighlights = (parts: Change[]) => {
+    return parts.map((part, index) => {
+      if (part.added) {
+        return (
+          <span
+            key={index}
+            className="bg-green-200 text-green-900 px-1 rounded font-semibold"
+            title="Added"
+          >
+            {part.value}
+          </span>
+        )
+      } else if (part.removed) {
+        return (
+          <span
+            key={index}
+            className="bg-red-200 text-red-900 px-1 rounded line-through font-semibold"
+            title="Removed"
+          >
+            {part.value}
+          </span>
+        )
+      } else {
+        return <span key={index} className="text-gray-700">{part.value}</span>
+      }
+    })
+  }
+
   const renderSplitView = () => {
-    const leftLines: Change[] = []
-    const rightLines: Change[] = []
+    const leftParts: Change[] = []
+    const rightParts: Change[] = []
 
     differences.forEach(part => {
       if (part.added) {
-        rightLines.push(part)
+        rightParts.push(part)
       } else if (part.removed) {
-        leftLines.push(part)
+        leftParts.push(part)
       } else {
-        leftLines.push(part)
-        rightLines.push(part)
+        leftParts.push(part)
+        rightParts.push(part)
       }
     })
 
-    const maxLines = Math.max(leftLines.length, rightLines.length)
-    const rows = []
-
-    // Add column headers
-    rows.push(
-      <div key="header" className="flex -mx-2 mb-2 sticky top-0 bg-white z-10 border-b border-gray-200 py-2">
-        <div className="flex-1 px-2">
-          <div className="font-medium text-gray-700">Original Text</div>
-        </div>
-        <div className="flex-1 px-2">
-          <div className="font-medium text-gray-700">Modified Text</div>
-        </div>
-      </div>
-    )
-
-    for (let i = 0; i < maxLines; i++) {
-      const leftPart = leftLines[i]
-      const rightPart = rightLines[i]
-      const isHighlighted = highlightedLines.includes(i)
-
-      rows.push(
-        <div 
-          key={`line-${i}`} 
-          className={`flex -mx-2 ${isHighlighted ? 'highlight-line' : ''}`}
-          data-line={i}
-        >
-          <div className="flex-1 px-2">
-            {leftPart && (
-              <div
-                className={`p-1 rounded font-mono text-sm ${
-                  leftPart.removed ? 'bg-red-50 text-red-700' : 'text-gray-700'
-                }`}
-              >
-                {leftPart.value}
-              </div>
-            )}
-          </div>
-          <div className="flex-1 px-2">
-            {rightPart && (
-              <div
-                className={`p-1 rounded font-mono text-sm ${
-                  rightPart.added ? 'bg-green-50 text-green-700' : 'text-gray-700'
-                }`}
-              >
-                {rightPart.value}
-              </div>
-            )}
-          </div>
-        </div>
-      )
-    }
-
     return (
       <div className="relative">
-        <div className="space-y-1">{rows}</div>
+        <div className="flex -mx-2 mb-2 sticky top-0 bg-white z-10 border-b border-gray-200 py-2">
+          <div className="flex-1 px-2">
+            <div className="font-medium text-gray-700">Original Text</div>
+          </div>
+          <div className="flex-1 px-2">
+            <div className="font-medium text-gray-700">Modified Text</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 min-h-[400px]">
+          <div className="p-4 bg-gray-50 rounded border border-gray-200 overflow-auto">
+            <div className="text-sm whitespace-pre-wrap break-words font-mono">
+              {renderTextWithHighlights(leftParts)}
+            </div>
+          </div>
+          <div className="p-4 bg-gray-50 rounded border border-gray-200 overflow-auto">
+            <div className="text-sm whitespace-pre-wrap break-words font-mono">
+              {renderTextWithHighlights(rightParts)}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -190,28 +193,34 @@ export function TextDiffChecker() {
   const renderUnifiedView = () => {
     return (
       <div className="relative">
-        <div className="space-y-1">
-          {differences.map((part, index) => {
-            const isHighlighted = highlightedLines.includes(index)
-            return (
-              <div
-                key={index}
-                className={`p-1 rounded font-mono text-sm ${
-                  part.added
-                    ? 'bg-green-50 text-green-700'
-                    : part.removed
-                    ? 'bg-red-50 text-red-700'
-                    : 'text-gray-700'
-                } ${isHighlighted ? 'highlight-line' : ''}`}
-                data-line={index}
-              >
-                <span className="select-none mr-2">
-                  {part.added ? '+' : part.removed ? '-' : ' '}
-                </span>
-                {part.value}
-              </div>
-            )
-          })}
+        <div className="p-3 bg-gray-50 rounded border border-gray-200">
+          <div className="text-sm whitespace-pre-wrap break-words">
+            {differences.map((part, index) => {
+              if (part.added) {
+                return (
+                  <span
+                    key={index}
+                    className="bg-green-200 text-green-900 px-1 rounded font-semibold"
+                    title="Added"
+                  >
+                    {part.value}
+                  </span>
+                )
+              } else if (part.removed) {
+                return (
+                  <span
+                    key={index}
+                    className="bg-red-200 text-red-900 px-1 rounded line-through font-semibold"
+                    title="Removed"
+                  >
+                    {part.value}
+                  </span>
+                )
+              } else {
+                return <span key={index} className="text-gray-700">{part.value}</span>
+              }
+            })}
+          </div>
         </div>
       </div>
     )
@@ -219,37 +228,62 @@ export function TextDiffChecker() {
 
   const compareDiff = () => {
     try {
-      if (!text1.trim() || !text2.trim()) {
-        setToastMessage('Please enter text in both fields')
-        setToastType('error')
-        setShowToast(true)
+      if (!text1.trim() && !text2.trim()) {
+        setDifferences([])
+        setDiffStats({ 
+          added: 0, 
+          removed: 0, 
+          unchanged: 0, 
+          addedWords: 0, 
+          removedWords: 0 
+        })
         return
       }
 
-      const diff = diffLines(text1, text2)
+      // Use word-level or character-level diffing
+      const diff = diffMode === 'words' ? diffWords(text1, text2) : diffChars(text1, text2)
       setDifferences(diff)
 
-      // Calculate statistics
-      const stats = diff.reduce(
-        (acc, part) => {
-          if (part.added) acc.added += part.count || 0
-          else if (part.removed) acc.removed += part.count || 0
-          else acc.unchanged += part.count || 0
-          return acc
-        },
-        { added: 0, removed: 0, unchanged: 0 }
-      )
-      setDiffStats(stats)
+      // Calculate statistics - count actual words/chars changed
+      let addedCount = 0
+      let removedCount = 0
+      let unchangedCount = 0
+      let addedWords = 0
+      let removedWords = 0
+      let unchangedWords = 0
+
+      diff.forEach(part => {
+        if (part.added) {
+          addedCount += part.value.length
+          // Count words in added text
+          const words = part.value.trim().split(/\s+/).filter(w => w.length > 0)
+          addedWords += words.length
+        } else if (part.removed) {
+          removedCount += part.value.length
+          // Count words in removed text
+          const words = part.value.trim().split(/\s+/).filter(w => w.length > 0)
+          removedWords += words.length
+        } else {
+          unchangedCount += part.value.length
+          // Count words in unchanged text
+          const words = part.value.trim().split(/\s+/).filter(w => w.length > 0)
+          unchangedWords += words.length
+        }
+      })
+
+      setDiffStats({
+        added: addedCount,
+        removed: removedCount,
+        unchanged: diffMode === 'words' ? unchangedWords : unchangedCount,
+        addedWords,
+        removedWords
+      })
 
       // Highlight first difference
       const firstDiffIndex = diff.findIndex(part => part.added || part.removed)
       if (firstDiffIndex !== -1) {
         setHighlightedLines([firstDiffIndex])
       }
-
-      setToastMessage('Comparison completed')
-      setToastType('success')
-      setShowToast(true)
     } catch (error) {
       setToastMessage('Error comparing texts')
       setToastType('error')
@@ -257,11 +291,26 @@ export function TextDiffChecker() {
     }
   }
 
+  // Real-time comparison
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      compareDiff()
+    }, 300) // Debounce for 300ms
+
+    return () => clearTimeout(timer)
+  }, [text1, text2, viewMode, diffMode])
+
   const clearAll = () => {
     setText1('')
     setText2('')
     setDifferences([])
-    setDiffStats({ added: 0, removed: 0, unchanged: 0 })
+    setDiffStats({ 
+      added: 0, 
+      removed: 0, 
+      unchanged: 0, 
+      addedWords: 0, 
+      removedWords: 0 
+    })
     setToastMessage('All cleared')
     setToastType('success')
     setShowToast(true)
@@ -278,7 +327,7 @@ export function TextDiffChecker() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
             <div>
@@ -289,8 +338,8 @@ export function TextDiffChecker() {
                 value={text1}
                 onChange={(e) => setText1(e.target.value)}
                 placeholder="Enter the original text here..."
-                rows={10}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                rows={12}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono text-sm"
               />
             </div>
 
@@ -302,30 +351,29 @@ export function TextDiffChecker() {
                 value={text2}
                 onChange={(e) => setText2(e.target.value)}
                 placeholder="Enter the modified text here..."
-                rows={10}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                rows={12}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono text-sm"
               />
             </div>
 
             <div className="flex space-x-2">
               <button
-                onClick={compareDiff}
-                className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Compare
-              </button>
-              <button
                 onClick={swapTexts}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               >
-                Swap
+                Swap Texts
               </button>
               <button
                 onClick={clearAll}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               >
-                Clear
+                Clear All
               </button>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
+              <p className="text-xs text-blue-800">
+                <strong>Tip:</strong> Comparison happens automatically as you type!
+              </p>
             </div>
           </div>
         </div>
@@ -337,6 +385,30 @@ export function TextDiffChecker() {
                 Differences
               </h3>
               <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1 mr-2">
+                  <button
+                    onClick={() => setDiffMode('words')}
+                    className={`px-2 py-1 rounded text-xs ${
+                      diffMode === 'words'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    title="Word-level comparison"
+                  >
+                    Words
+                  </button>
+                  <button
+                    onClick={() => setDiffMode('chars')}
+                    className={`px-2 py-1 rounded text-xs ${
+                      diffMode === 'chars'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    title="Character-level comparison"
+                  >
+                    Chars
+                  </button>
+                </div>
                 <button
                   onClick={() => setViewMode('split')}
                   className={`px-3 py-1 rounded text-sm ${
@@ -361,42 +433,70 @@ export function TextDiffChecker() {
             </div>
 
             {differences.length > 0 && (
-              <div className="mb-4 grid grid-cols-3 gap-4">
-                <div className="bg-white p-3 rounded-md text-center">
+              <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white p-3 rounded-md text-center border-2 border-green-200">
                   <div className="text-lg font-bold text-green-600">
-                    {diffStats.added}
+                    {diffMode === 'words' ? diffStats.addedWords : diffStats.added}
                   </div>
-                  <div className="text-sm text-gray-500">Lines Added</div>
+                  <div className="text-xs text-gray-500">
+                    {diffMode === 'words' ? 'Words Added' : 'Chars Added'}
+                  </div>
                 </div>
-                <div className="bg-white p-3 rounded-md text-center">
+                <div className="bg-white p-3 rounded-md text-center border-2 border-red-200">
                   <div className="text-lg font-bold text-red-600">
-                    {diffStats.removed}
+                    {diffMode === 'words' ? diffStats.removedWords : diffStats.removed}
                   </div>
-                  <div className="text-sm text-gray-500">Lines Removed</div>
+                  <div className="text-xs text-gray-500">
+                    {diffMode === 'words' ? 'Words Removed' : 'Chars Removed'}
+                  </div>
                 </div>
-                <div className="bg-white p-3 rounded-md text-center">
+                <div className="bg-white p-3 rounded-md text-center border border-gray-200">
                   <div className="text-lg font-bold text-gray-600">
                     {diffStats.unchanged}
                   </div>
-                  <div className="text-sm text-gray-500">Lines Unchanged</div>
+                  <div className="text-xs text-gray-500">
+                    {diffMode === 'words' ? 'Words Unchanged' : 'Chars Unchanged'}
+                  </div>
+                </div>
+                <div className="bg-white p-3 rounded-md text-center border border-gray-200">
+                  <div className="text-lg font-bold text-indigo-600">
+                    {diffMode === 'words' 
+                      ? diffStats.addedWords + diffStats.removedWords 
+                      : diffStats.added + diffStats.removed}
+                  </div>
+                  <div className="text-xs text-gray-500">Total Changes</div>
                 </div>
               </div>
             )}
 
             <div className="bg-white rounded-md relative">
+              {differences.length > 0 && (
+                <div className="p-2 bg-gray-100 border-b border-gray-200 flex gap-4 text-xs">
+                  <div className="flex items-center gap-1">
+                    <span className="w-4 h-4 bg-red-200 rounded inline-block"></span>
+                    <span className="text-gray-600">Removed</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-4 h-4 bg-green-200 rounded inline-block"></span>
+                    <span className="text-gray-600">Added</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-gray-700">Normal text</span>
+                  </div>
+                </div>
+              )}
               <div 
                 ref={diffContainerRef}
-                className="overflow-auto max-h-[500px] p-4 custom-scrollbar"
+                className="overflow-auto max-h-[600px] p-4 custom-scrollbar"
               >
                 {differences.length > 0 ? (
                   viewMode === 'split' ? renderSplitView() : renderUnifiedView()
                 ) : (
                   <p className="text-gray-500 text-center py-4">
-                    Differences will appear here after comparison
+                    Enter text in both fields to see differences highlighted in real-time
                   </p>
                 )}
               </div>
-              {differences.length > 0 && renderScrollbarMarkers(differences)}
             </div>
           </div>
 

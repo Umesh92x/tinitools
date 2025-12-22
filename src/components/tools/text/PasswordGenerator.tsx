@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AdUnit } from '@/components/ads/AdUnit'
 import { Toast } from '@/components/ui/Toast'
 
@@ -16,6 +16,7 @@ interface PasswordOptions {
 
 export function PasswordGenerator() {
   const [password, setPassword] = useState('')
+  const [passwordHistory, setPasswordHistory] = useState<string[]>([])
   const [options, setOptions] = useState<PasswordOptions>({
     length: 16,
     uppercase: true,
@@ -90,6 +91,10 @@ export function PasswordGenerator() {
 
       setPassword(finalPassword)
       calculatePasswordStrength(finalPassword)
+      
+      // Add to history (keep last 5)
+      setPasswordHistory(prev => [finalPassword, ...prev].slice(0, 5))
+      
       setToastMessage('Password generated successfully!')
       setToastType('success')
       setShowToast(true)
@@ -99,6 +104,14 @@ export function PasswordGenerator() {
       setShowToast(true)
     }
   }
+
+  // Auto-generate on mount
+  useEffect(() => {
+    if (!password) {
+      generatePassword()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const replaceAt = (str: string, index: number, char: string) => {
     return str.substring(0, index) + char + str.substring(index + 1)
@@ -133,11 +146,122 @@ export function PasswordGenerator() {
     setOptions(prev => ({ ...prev, [key]: value }))
   }
 
+  const applyPreset = (preset: 'strong' | 'pin' | 'simple') => {
+    switch (preset) {
+      case 'strong':
+        setOptions({
+          length: 20,
+          uppercase: true,
+          lowercase: true,
+          numbers: true,
+          symbols: true,
+          excludeSimilar: true,
+          excludeAmbiguous: false,
+        })
+        break
+      case 'pin':
+        setOptions({
+          length: 6,
+          uppercase: false,
+          lowercase: false,
+          numbers: true,
+          symbols: false,
+          excludeSimilar: true,
+          excludeAmbiguous: false,
+        })
+        break
+      case 'simple':
+        setOptions({
+          length: 12,
+          uppercase: true,
+          lowercase: true,
+          numbers: true,
+          symbols: false,
+          excludeSimilar: false,
+          excludeAmbiguous: false,
+        })
+        break
+    }
+    setTimeout(() => generatePassword(), 100)
+  }
+
+  const generateMultiple = (count: number = 3) => {
+    const passwords: string[] = []
+    for (let i = 0; i < count; i++) {
+      const tempOptions = { ...options }
+      const tempPassword = generatePasswordWithOptions(tempOptions)
+      if (tempPassword) passwords.push(tempPassword)
+    }
+    setPasswordHistory(prev => [...passwords, ...prev].slice(0, 5))
+    setToastMessage(`Generated ${passwords.length} passwords!`)
+    setToastType('success')
+    setShowToast(true)
+  }
+
+  const generatePasswordWithOptions = (opts: PasswordOptions): string | null => {
+    try {
+      let charset = ''
+      if (opts.uppercase) charset += characters.uppercase
+      if (opts.lowercase) charset += characters.lowercase
+      if (opts.numbers) charset += characters.numbers
+      if (opts.symbols) charset += characters.symbols
+
+      if (opts.excludeSimilar) {
+        characters.similar.split('').forEach(char => {
+          charset = charset.replace(new RegExp(char, 'g'), '')
+        })
+      }
+
+      if (opts.excludeAmbiguous) {
+        characters.ambiguous.split('').forEach(char => {
+          charset = charset.replace(new RegExp('\\' + char, 'g'), '')
+        })
+      }
+
+      if (!charset) return null
+
+      let result = ''
+      for (let i = 0; i < opts.length; i++) {
+        result += charset.charAt(Math.floor(Math.random() * charset.length))
+      }
+
+      return result
+    } catch {
+      return null
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quick Presets
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => applyPreset('strong')}
+                  className="flex-1 px-3 py-2 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200"
+                >
+                  Strong
+                </button>
+                <button
+                  onClick={() => applyPreset('pin')}
+                  className="flex-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
+                >
+                  PIN
+                </button>
+                <button
+                  onClick={() => applyPreset('simple')}
+                  className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                >
+                  Simple
+                </button>
+              </div>
+            </div>
+
             <div className="relative">
               <input
                 type="text"
@@ -261,13 +385,44 @@ export function PasswordGenerator() {
               </div>
             </div>
 
-            <button
-              onClick={generatePassword}
-              className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Generate Password
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={generatePassword}
+                className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Regenerate
+              </button>
+              <button
+                onClick={() => generateMultiple(3)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Generate 3
+              </button>
+            </div>
           </div>
+
+          {passwordHistory.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Recent Passwords</h3>
+              <div className="space-y-2">
+                {passwordHistory.map((pwd, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <code className="text-sm font-mono text-gray-700 flex-1 truncate">{pwd}</code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(pwd)
+                        setToastMessage('Password copied!')
+                        setShowToast(true)
+                      }}
+                      className="ml-2 text-xs text-indigo-600 hover:text-indigo-500"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">

@@ -29,8 +29,15 @@ export function InvestmentCalculator() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
 
   const validateInputs = () => {
-    if (!initialAmount || !monthlyInvestment || !returnRate || !years) {
-      setToastMessage('Please fill in all fields')
+    if (!initialAmount && !monthlyInvestment) {
+      setToastMessage('Enter at least an initial investment or a monthly investment.')
+      setToastType('error')
+      setShowToast(true)
+      return false
+    }
+
+    if (!returnRate || !years) {
+      setToastMessage('Please fill in expected return rate and investment period.')
       setToastType('error')
       setShowToast(true)
       return false
@@ -47,14 +54,21 @@ export function InvestmentCalculator() {
       isNaN(numRate) ||
       isNaN(numYears)
     ) {
-      setToastMessage('Please enter valid numbers')
+      setToastMessage('Please enter valid numeric values.')
       setToastType('error')
       setShowToast(true)
       return false
     }
 
-    if (numInitial < 0 || numMonthly < 0 || numRate < 0 || numYears < 0) {
-      setToastMessage('Values cannot be negative')
+    if (numInitial < 0 || numMonthly < 0 || numRate < 0 || numYears <= 0) {
+      setToastMessage('Amounts cannot be negative and years must be greater than 0.')
+      setToastType('error')
+      setShowToast(true)
+      return false
+    }
+
+    if (numRate > 100) {
+      setToastMessage('Return rate looks too high. Please enter a realistic annual rate (0–100%).')
       setToastType('error')
       setShowToast(true)
       return false

@@ -15,6 +15,7 @@ const commonTimeZones = [
   { name: 'America/Los_Angeles', label: 'Los Angeles (PST/PDT)' },
   { name: 'Europe/London', label: 'London (GMT/BST)' },
   { name: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+  { name: 'Asia/Kolkata', label: 'India (IST)' },
   { name: 'Asia/Tokyo', label: 'Tokyo (JST)' },
   { name: 'Asia/Dubai', label: 'Dubai (GST)' },
   { name: 'Asia/Singapore', label: 'Singapore (SGT)' },
@@ -46,26 +47,56 @@ export function MeetingPlanner() {
   }
 
   const generateTimeSlots = () => {
-    const slots = []
+    const slots: {
+      time: string
+      participants: { name: string; localTime: string; inWorkingHours: boolean }[]
+      allWithinWorkingHours: boolean
+    }[] = []
     const baseDate = new Date(date)
-    
+    const durationMinutes = parseInt(duration, 10) || 60
+    const WORK_START_HOUR = 8
+    const WORK_END_HOUR = 18
+
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const time = new Date(baseDate)
         time.setHours(hour, minute)
-        
+
+        const utcLabel = time.toLocaleTimeString('en-US', {
+          timeZone: 'UTC',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+
         const timeSlot = {
-          time: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-          participants: participants.map(p => ({
-            name: p.name || `Participant ${p.id}`,
-            localTime: new Date(time).toLocaleTimeString('en-US', {
-              timeZone: p.timeZone,
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true,
-            })
-          }))
+          time: utcLabel,
+          participants: participants.map((p) => {
+            const zonedDate = new Date(
+              time.toLocaleString('en-US', { timeZone: p.timeZone }),
+            )
+            const startHour = zonedDate.getHours() + zonedDate.getMinutes() / 60
+            const endHour = startHour + durationMinutes / 60
+            const inWorkingHours =
+              startHour >= WORK_START_HOUR && endHour <= WORK_END_HOUR
+
+            return {
+              name: p.name || `Participant ${p.id}`,
+              localTime: zonedDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+              }),
+              inWorkingHours,
+            }
+          }),
+          allWithinWorkingHours: false,
         }
+
+        timeSlot.allWithinWorkingHours = timeSlot.participants.every(
+          (p) => p.inWorkingHours,
+        )
+
         slots.push(timeSlot)
       }
     }
@@ -87,6 +118,7 @@ export function MeetingPlanner() {
               id="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             />
           </div>
@@ -157,6 +189,13 @@ export function MeetingPlanner() {
         </div>
       </div>
 
+      <div className="text-xs text-gray-500 flex items-center justify-between mt-2">
+        <span>
+          Rows highlighted in green indicate time slots where all participants are within typical working
+          hours (8:00–18:00 local time) for the full meeting duration.
+        </span>
+      </div>
+
       <div className="mt-8 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
         <table className="min-w-full divide-y divide-gray-300">
           <thead className="bg-gray-50">
@@ -173,7 +212,16 @@ export function MeetingPlanner() {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {timeSlots.map((slot, index) => (
-              <tr key={index} className={index % 2 === 0 ? undefined : 'bg-gray-50'}>
+              <tr
+                key={index}
+                className={
+                  slot.allWithinWorkingHours
+                    ? 'bg-emerald-50'
+                    : index % 2 === 0
+                    ? undefined
+                    : 'bg-gray-50'
+                }
+              >
                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                   {slot.time}
                 </td>

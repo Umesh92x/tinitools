@@ -17,8 +17,10 @@ export function TextToSpeech() {
   const [rate, setRate] = useState(1)
   const [pitch, setPitch] = useState(1)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null)
 
   useEffect(() => {
     const loadVoices = () => {
@@ -48,6 +50,13 @@ export function TextToSpeech() {
     }
 
     if (typeof window !== 'undefined' && window.speechSynthesis) {
+      // Resume if paused
+      if (isPaused && window.speechSynthesis.paused) {
+        window.speechSynthesis.resume()
+        setIsPaused(false)
+        return
+      }
+
       // Cancel any ongoing speech
       window.speechSynthesis.cancel()
 
@@ -59,15 +68,42 @@ export function TextToSpeech() {
       utterance.rate = rate
       utterance.pitch = pitch
 
-      utterance.onstart = () => setIsPlaying(true)
-      utterance.onend = () => setIsPlaying(false)
+      utterance.onstart = () => {
+        setIsPlaying(true)
+        setIsPaused(false)
+      }
+      utterance.onend = () => {
+        setIsPlaying(false)
+        setIsPaused(false)
+        setCurrentUtterance(null)
+      }
       utterance.onerror = () => {
         setIsPlaying(false)
+        setIsPaused(false)
         setToastMessage('Error occurred while playing speech')
         setShowToast(true)
       }
 
+      setCurrentUtterance(utterance)
       window.speechSynthesis.speak(utterance)
+    }
+  }
+
+  const handlePause = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause()
+        setIsPaused(true)
+      }
+    }
+  }
+
+  const handleResume = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume()
+        setIsPaused(false)
+      }
     }
   }
 
@@ -75,6 +111,22 @@ export function TextToSpeech() {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel()
       setIsPlaying(false)
+      setIsPaused(false)
+      setCurrentUtterance(null)
+    }
+  }
+
+  const setSpeedPreset = (preset: 'slow' | 'normal' | 'fast') => {
+    switch (preset) {
+      case 'slow':
+        setRate(0.75)
+        break
+      case 'normal':
+        setRate(1)
+        break
+      case 'fast':
+        setRate(1.5)
+        break
     }
   }
 
@@ -114,9 +166,31 @@ export function TextToSpeech() {
         </div>
 
         <div>
-          <label htmlFor="rate" className="block text-sm font-medium text-gray-700">
-            Speed: {rate}x
-          </label>
+          <div className="flex justify-between items-center mb-2">
+            <label htmlFor="rate" className="block text-sm font-medium text-gray-700">
+              Speed: {rate}x
+            </label>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setSpeedPreset('slow')}
+                className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+              >
+                Slow
+              </button>
+              <button
+                onClick={() => setSpeedPreset('normal')}
+                className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+              >
+                Normal
+              </button>
+              <button
+                onClick={() => setSpeedPreset('fast')}
+                className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+              >
+                Fast
+              </button>
+            </div>
+          </div>
           <input
             type="range"
             id="rate"
@@ -146,18 +220,34 @@ export function TextToSpeech() {
         </div>
       </div>
 
-      <div className="flex space-x-4">
+      <div className="flex space-x-2">
         <button
           onClick={handleSpeak}
-          disabled={isPlaying}
+          disabled={isPlaying && !isPaused}
           className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
         >
-          {isPlaying ? 'Speaking...' : 'Speak'}
+          {isPaused ? 'Resume' : isPlaying ? 'Speaking...' : 'Speak'}
         </button>
-        {isPlaying && (
+        {isPlaying && !isPaused && (
+          <button
+            onClick={handlePause}
+            className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+          >
+            Pause
+          </button>
+        )}
+        {isPaused && (
+          <button
+            onClick={handleResume}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          >
+            Resume
+          </button>
+        )}
+        {(isPlaying || isPaused) && (
           <button
             onClick={handleStop}
-            className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
           >
             Stop
           </button>

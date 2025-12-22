@@ -15,29 +15,49 @@ export function ImageResizer() {
   const [dimensions, setDimensions] = useState<ImageDimensions>({ width: 0, height: 0 })
   const [newDimensions, setNewDimensions] = useState<ImageDimensions>({ width: 0, height: 0 })
   const [maintainAspectRatio, setMaintainAspectRatio] = useState(true)
+  const [quality, setQuality] = useState(80) // percentage, used for JPEG/WebP
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState<'success' | 'error'>('success')
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const img = new Image()
-        img.onload = () => {
-          setDimensions({ width: img.width, height: img.height })
-          setNewDimensions({ width: img.width, height: img.height })
-          setPreview(e.target?.result as string)
-        }
-        img.src = e.target?.result as string
-      }
-      reader.readAsDataURL(file)
+    if (!file) {
+      return
     }
+
+    if (!file.type.startsWith('image/')) {
+      setToastMessage('Please select a valid image file.')
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
+
+    setSelectedFile(file)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        setDimensions({ width: img.width, height: img.height })
+        setNewDimensions({ width: img.width, height: img.height })
+        setPreview(e.target?.result as string)
+      }
+      img.src = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleDimensionChange = (dimension: 'width' | 'height', value: number) => {
+    if (!value || value <= 0) {
+      // Ignore invalid or non-positive values; user will be warned on resize
+      setNewDimensions((prev) => ({
+        ...prev,
+        [dimension]: 0,
+      }))
+      return
+    }
+
     if (maintainAspectRatio) {
       const aspectRatio = dimensions.width / dimensions.height
       if (dimension === 'width') {
@@ -60,7 +80,19 @@ export function ImageResizer() {
   }
 
   const resizeImage = () => {
-    if (!selectedFile || !canvasRef.current) return
+    if (!selectedFile || !canvasRef.current) {
+      setToastMessage('Please upload an image first.')
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
+
+    if (newDimensions.width <= 0 || newDimensions.height <= 0) {
+      setToastMessage('Please enter valid width and height greater than 0.')
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -71,7 +103,19 @@ export function ImageResizer() {
       canvas.width = newDimensions.width
       canvas.height = newDimensions.height
       ctx.drawImage(img, 0, 0, newDimensions.width, newDimensions.height)
-      
+
+      const originalType = selectedFile.type
+      const mimeType =
+        originalType === 'image/jpeg' ||
+        originalType === 'image/jpg' ||
+        originalType === 'image/webp'
+          ? originalType
+          : 'image/png'
+      const qualityFactor =
+        mimeType === 'image/jpeg' || mimeType === 'image/webp'
+          ? quality / 100
+          : undefined
+
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob)
@@ -84,9 +128,10 @@ export function ImageResizer() {
           URL.revokeObjectURL(url)
           
           setToastMessage('Image resized and downloaded successfully!')
+          setToastType('success')
           setShowToast(true)
         }
-      }, selectedFile.type)
+      }, mimeType, qualityFactor)
     }
     img.src = preview
   }
@@ -146,6 +191,30 @@ export function ImageResizer() {
             </label>
           </div>
 
+          <div className="mt-4 space-y-1">
+            <label htmlFor="quality" className="block text-sm font-medium text-gray-700">
+              Output quality (for JPEG/WebP)
+            </label>
+            <input
+              id="quality"
+              type="range"
+              min={30}
+              max={100}
+              step={5}
+              value={quality}
+              onChange={(e) => setQuality(parseInt(e.target.value))}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Smaller file</span>
+              <span>{quality}% quality</span>
+              <span>Better quality</span>
+            </div>
+            <p className="text-xs text-gray-400">
+              Quality slider affects JPEG/WebP downloads. PNG images are always exported at full quality.
+            </p>
+          </div>
+
           <button
             onClick={resizeImage}
             className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -162,7 +231,7 @@ export function ImageResizer() {
       <Toast
         show={showToast}
         message={toastMessage}
-        type="success"
+        type={toastType}
         onClose={() => setShowToast(false)}
       />
     </div>

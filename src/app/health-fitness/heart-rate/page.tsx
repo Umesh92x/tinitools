@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 
 interface HeartRateZone {
   name: string;
@@ -15,16 +15,44 @@ export default function HeartRateCalculator() {
   const [age, setAge] = useState('')
   const [restingHeartRate, setRestingHeartRate] = useState('')
   const [zones, setZones] = useState<HeartRateZone[]>([])
+  const [maxHR, setMaxHR] = useState<number | null>(null)
+  const [heartRateReserve, setHeartRateReserve] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const calculateHeartRateZones = () => {
-    if (!age || !restingHeartRate) return
+  const calculateHeartRateZones = (e?: FormEvent) => {
+    if (e) e.preventDefault()
 
-    const maxHeartRate = 220 - parseInt(age)
-    const hrr = maxHeartRate - parseInt(restingHeartRate) // Heart Rate Reserve
-    const rhr = parseInt(restingHeartRate)
+    if (!age || !restingHeartRate) {
+      setError('Please enter both your age and resting heart rate.')
+      setZones([])
+      setMaxHR(null)
+      setHeartRateReserve(null)
+      return
+    }
+
+    const ageNum = parseInt(age, 10)
+    const rhrNum = parseInt(restingHeartRate, 10)
+
+    if (
+      Number.isNaN(ageNum) ||
+      Number.isNaN(rhrNum) ||
+      ageNum < 13 ||
+      ageNum > 100 ||
+      rhrNum < 30 ||
+      rhrNum > 120
+    ) {
+      setError('Please enter a realistic age (13–100 years) and resting heart rate (30–120 bpm).')
+      setZones([])
+      setMaxHR(null)
+      setHeartRateReserve(null)
+      return
+    }
+
+    const maxHeartRate = 220 - ageNum
+    const hrr = maxHeartRate - rhrNum // Heart Rate Reserve
 
     const calculateZoneHR = (percentage: number) => {
-      return Math.round(hrr * percentage + rhr)
+      return Math.round(hrr * percentage + rhrNum)
     }
 
     const newZones: HeartRateZone[] = [
@@ -70,6 +98,9 @@ export default function HeartRateCalculator() {
       },
     ]
 
+    setError(null)
+    setMaxHR(maxHeartRate)
+    setHeartRateReserve(hrr)
     setZones(newZones)
   }
 
@@ -77,11 +108,18 @@ export default function HeartRateCalculator() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Heart Rate Zone Calculator</h1>
-        <p className="text-gray-600 mb-8">
-          Calculate your heart rate training zones based on your age and resting heart rate. These zones help you optimize your workouts for different fitness goals.
+        <p className="text-gray-600 mb-3">
+          Calculate your heart rate training zones based on your age and resting heart rate.
+        </p>
+        <p className="text-sm text-gray-500 mb-8">
+          This calculator uses the Karvonen formula (Heart Rate Reserve method) to estimate zones. Use a heart
+          rate monitor for best accuracy, and always listen to your body during workouts.
         </p>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <form
+          onSubmit={calculateHeartRateZones}
+          className="bg-white rounded-lg shadow-sm p-6"
+        >
           <div className="space-y-6">
             {/* Age Input */}
             <div>
@@ -93,8 +131,9 @@ export default function HeartRateCalculator() {
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                min="0"
-                max="120"
+                min="13"
+                max="100"
+                required
               />
             </div>
 
@@ -110,6 +149,7 @@ export default function HeartRateCalculator() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 min="30"
                 max="120"
+                required
               />
               <p className="mt-1 text-sm text-gray-500">
                 Measure your heart rate when you first wake up, while still lying in bed
@@ -118,51 +158,80 @@ export default function HeartRateCalculator() {
 
             {/* Calculate Button */}
             <button
-              onClick={calculateHeartRateZones}
+              type="submit"
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
             >
               Calculate Heart Rate Zones
             </button>
 
+            {error && (
+              <p className="text-sm text-red-600">
+                {error}
+              </p>
+            )}
+
             {/* Results */}
             {zones.length > 0 && (
               <div className="mt-6 space-y-6">
-                {zones.map((zone, index) => (
-                  <div
-                    key={index}
-                    className="p-4 rounded-lg"
-                    style={{
-                      backgroundColor: `rgba(59, 130, 246, ${0.1 + index * 0.15})`,
-                    }}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold">{zone.name}</h3>
-                      <span className="text-sm text-gray-600">{zone.description}</span>
-                    </div>
-                    <div className="text-2xl font-bold text-blue-600 mb-2">
-                      {zone.min} - {zone.max} bpm
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      <p><strong>Intensity:</strong> {zone.intensity}</p>
-                      <p><strong>Benefits:</strong> {zone.benefits}</p>
-                    </div>
+                {maxHR !== null && (
+                  <div className="p-4 bg-blue-50 rounded-md">
+                    <h3 className="text-lg font-semibold mb-1">Summary</h3>
+                    <p className="text-sm text-gray-700">
+                      Estimated maximum heart rate: <span className="font-semibold">{maxHR} bpm</span>
+                    </p>
+                    {heartRateReserve !== null && (
+                      <p className="text-sm text-gray-700">
+                        Heart rate reserve (HRR): <span className="font-semibold">{heartRateReserve} bpm</span>
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs text-gray-500">
+                      These values are estimates based on population formulas. Your true max heart rate can vary.
+                    </p>
                   </div>
-                ))}
+                )}
+
+                <div className="space-y-6">
+                  {zones.map((zone, index) => (
+                    <div
+                      key={index}
+                      className="p-4 rounded-lg"
+                      style={{
+                        backgroundColor: `rgba(59, 130, 246, ${0.1 + index * 0.15})`,
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-lg font-semibold">{zone.name}</h3>
+                        <span className="text-sm text-gray-600">{zone.description}</span>
+                      </div>
+                      <div className="text-2xl font-bold text-blue-600 mb-2">
+                        {zone.min} - {zone.max} bpm
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <p><strong>Intensity:</strong> {zone.intensity}</p>
+                        <p><strong>Benefits:</strong> {zone.benefits}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 <div className="mt-4 p-4 bg-gray-50 rounded-md">
                   <h3 className="text-lg font-semibold mb-2">How to Use Heart Rate Zones</h3>
                   <ul className="space-y-2 text-sm text-gray-600">
                     <li>• Zone 1: Use for warm-up and recovery</li>
-                    <li>• Zone 2: Ideal for long, slow distance training</li>
-                    <li>• Zone 3: Good for improving aerobic capacity</li>
-                    <li>• Zone 4: Increases maximum performance capacity</li>
-                    <li>• Zone 5: Use sparingly for maximum effort intervals</li>
+                    <li>• Zone 2: Ideal for long, steady efforts and base training</li>
+                    <li>• Zone 3: Good for improving aerobic capacity and tempo efforts</li>
+                    <li>• Zone 4: Increases maximum performance capacity and speed</li>
+                    <li>• Zone 5: Use sparingly for short, maximum-effort intervals</li>
                   </ul>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Always check with a healthcare professional before starting a new or high-intensity training
+                    program, especially if you have any heart or health concerns.
+                  </p>
                 </div>
               </div>
             )}
           </div>
-        </div>
+        </form>
       </div>
     </div>
   )

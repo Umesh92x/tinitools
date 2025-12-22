@@ -26,7 +26,7 @@ export function CompoundInterestCalculator() {
 
   const validateInputs = () => {
     if (!principal || !rate || !time) {
-      setToastMessage('Please fill in all fields')
+      setToastMessage('Please fill in principal amount, interest rate, and time period.')
       setToastType('error')
       setShowToast(true)
       return false
@@ -37,14 +37,21 @@ export function CompoundInterestCalculator() {
     const numTime = parseFloat(time)
 
     if (isNaN(numPrincipal) || isNaN(numRate) || isNaN(numTime)) {
-      setToastMessage('Please enter valid numbers')
+      setToastMessage('Please enter valid numeric values.')
       setToastType('error')
       setShowToast(true)
       return false
     }
 
-    if (numPrincipal <= 0 || numRate <= 0 || numTime <= 0) {
-      setToastMessage('Values must be greater than 0')
+    if (numPrincipal <= 0 || numTime <= 0) {
+      setToastMessage('Principal and time period must be greater than 0.')
+      setToastType('error')
+      setShowToast(true)
+      return false
+    }
+
+    if (numRate < 0) {
+      setToastMessage('Interest rate cannot be negative.')
       setToastType('error')
       setShowToast(true)
       return false
@@ -65,7 +72,10 @@ export function CompoundInterestCalculator() {
     let prevAmount = p
 
     for (let year = 1; year <= t; year++) {
-      const amount = p * Math.pow(1 + r/n, n * year)
+      const amount =
+        r === 0
+          ? p
+          : p * Math.pow(1 + r / n, n * year)
       const yearlyInterest = amount - prevAmount
       
       yearlyBreakdown.push({

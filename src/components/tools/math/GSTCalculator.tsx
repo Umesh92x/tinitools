@@ -29,7 +29,7 @@ export function GSTCalculator() {
 
   const validateInputs = () => {
     if (!amount || !gstRate) {
-      setToastMessage('Please fill in all fields')
+      setToastMessage('Please enter amount and select a GST rate.')
       setToastType('error')
       setShowToast(true)
       return false
@@ -39,14 +39,21 @@ export function GSTCalculator() {
     const numRate = parseFloat(gstRate)
 
     if (isNaN(numAmount) || isNaN(numRate)) {
-      setToastMessage('Please enter valid numbers')
+      setToastMessage('Please enter valid numeric values.')
       setToastType('error')
       setShowToast(true)
       return false
     }
 
-    if (numAmount <= 0 || numRate <= 0) {
-      setToastMessage('Values must be greater than 0')
+    if (numAmount <= 0) {
+      setToastMessage('Amount must be greater than 0.')
+      setToastType('error')
+      setShowToast(true)
+      return false
+    }
+
+    if (numRate <= 0) {
+      setToastMessage('GST rate must be greater than 0%.')
       setToastType('error')
       setShowToast(true)
       return false

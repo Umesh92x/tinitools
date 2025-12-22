@@ -26,6 +26,7 @@ export default function RepCounter() {
   const [setTime, setSetTime] = useState('')
   const [isActive, setIsActive] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -76,27 +77,43 @@ export default function RepCounter() {
 
   const addExercise = () => {
     if (!exerciseName.trim()) {
-      alert('Please enter an exercise name');
+      setFormError('Please enter an exercise name.')
       return;
     }
     
     if (!reps || !sets || !restTime || !setTime) {
-      alert('Please fill in all fields');
+      setFormError('Please fill in reps, sets, seconds per set, and rest time.')
       return;
     }
-    
-    if (parseInt(reps) <= 0 || parseInt(sets) <= 0 || parseInt(restTime) < 0 || parseInt(setTime) <= 0) {
-      alert('Please enter valid numbers (greater than 0)');
+
+    const repsNum = parseInt(reps, 10)
+    const setsNum = parseInt(sets, 10)
+    const restNum = parseInt(restTime, 10)
+    const setTimeNum = parseInt(setTime, 10)
+
+    if (
+      Number.isNaN(repsNum) ||
+      Number.isNaN(setsNum) ||
+      Number.isNaN(restNum) ||
+      Number.isNaN(setTimeNum) ||
+      repsNum <= 0 ||
+      setsNum <= 0 ||
+      setTimeNum <= 0 ||
+      restNum < 0
+    ) {
+      setFormError('Please enter valid numbers (reps/sets/seconds must be positive, rest can be 0 or more).')
       return;
     }
+
+    setFormError(null)
 
     const newExercise: Exercise = {
       id: Date.now().toString(),
       name: exerciseName.trim(),
-      reps: parseInt(reps),
-      sets: parseInt(sets),
-      restTime: parseInt(restTime),
-      setTime: parseInt(setTime),
+      reps: repsNum,
+      sets: setsNum,
+      restTime: restNum,
+      setTime: setTimeNum,
     };
     
     setExercises(prevExercises => [...prevExercises, newExercise]);
@@ -139,6 +156,13 @@ export default function RepCounter() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Exercise Rep Counter</h1>
+        <p className="text-gray-600 mb-2">
+          Create a simple workout, then track sets, reps, and rest with built-in timers.
+        </p>
+        <p className="text-sm text-gray-500 mb-6">
+          Add one or more exercises below, then start an exercise to follow along with the countdown timer and
+          track how many reps you complete each set.
+        </p>
         
         {/* Add Exercise Form */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
@@ -213,6 +237,11 @@ export default function RepCounter() {
             >
               Add Exercise
             </button>
+            {formError && (
+              <p className="text-sm text-red-600">
+                {formError}
+              </p>
+            )}
           </div>
         </div>
 
@@ -302,6 +331,34 @@ export default function RepCounter() {
                   {setTimeLeft}
                 </div>
                 <p className="mt-2 text-gray-600">seconds remaining in set</p>
+                <div className="mt-6 flex flex-col items-center gap-3">
+                  <p className="text-sm text-gray-600">
+                    Track your completed reps for this set:
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentRep((prev) => Math.max(0, prev - 1))}
+                      className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      −
+                    </button>
+                    <span className="text-3xl font-semibold text-blue-600 min-w-[3rem] inline-block">
+                      {currentRep}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentRep((prev) =>
+                          currentExercise ? Math.min(currentExercise.reps, prev + 1) : prev + 1
+                        )
+                      }
+                      className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

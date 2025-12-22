@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 
 type ActivityLevel = 'sedentary' | 'moderate' | 'active'
 type Climate = 'temperate' | 'hot' | 'humid'
@@ -21,11 +21,20 @@ export default function WaterIntakeCalculator() {
   const [weight, setWeight] = useState('')
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('sedentary')
   const [climate, setClimate] = useState<Climate>('temperate')
-  const [result, setResult] = useState<{ ml: number; cups: number } | null>(null)
+  const [result, setResult] = useState<{ ml: number; cups: number; liters: number } | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const calculateWaterIntake = () => {
+  const calculateWaterIntake = (e?: FormEvent) => {
+    if (e) e.preventDefault()
+
     const w = parseFloat(weight)
-    if (isNaN(w)) return
+    if (!w || w <= 0 || w > 300) {
+      setError('Please enter a valid weight in kilograms (between 20 and 300).')
+      setResult(null)
+      return
+    }
+
+    setError(null)
 
     // Base calculation: 30ml per kg of body weight
     const baseIntake = w * 30
@@ -36,19 +45,35 @@ export default function WaterIntakeCalculator() {
     
     const totalIntakeML = Math.round(baseIntake * activityMultiplier * climateMultiplier)
     const totalIntakeCups = Math.round((totalIntakeML / 240) * 10) / 10 // 240ml per cup, round to 1 decimal
+    const totalIntakeLiters = Math.round((totalIntakeML / 1000) * 10) / 10 // liters, 1 decimal
 
-    setResult({ ml: totalIntakeML, cups: totalIntakeCups })
+    setResult({ ml: totalIntakeML, cups: totalIntakeCups, liters: totalIntakeLiters })
+  }
+
+  const handleReset = () => {
+    setWeight('')
+    setActivityLevel('sedentary')
+    setClimate('temperate')
+    setResult(null)
+    setError(null)
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Water Intake Calculator</h1>
-        <p className="text-gray-600 mb-8">
+        <p className="text-gray-600 mb-4">
           Calculate your daily water intake needs based on your weight, activity level, and climate.
         </p>
+        <p className="text-sm text-gray-500 mb-8">
+          This calculator uses a common guideline of around 30 ml of water per kilogram of body weight and adjusts
+          it based on your activity level and climate. Individual needs may vary.
+        </p>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <form
+          onSubmit={calculateWaterIntake}
+          className="bg-white rounded-lg shadow-sm p-6"
+        >
           <div className="space-y-6">
             {/* Weight Input */}
             <div>
@@ -61,9 +86,14 @@ export default function WaterIntakeCalculator() {
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                min="0"
+                min="20"
+                max="300"
                 step="0.1"
+                required
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Enter your body weight in kilograms. If you know your weight in pounds, divide it by 2.2 to convert.
+              </p>
             </div>
 
             {/* Activity Level Selection */}
@@ -83,6 +113,9 @@ export default function WaterIntakeCalculator() {
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Choose the option that best matches how active you are on a typical day.
+              </p>
             </div>
 
             {/* Climate Selection */}
@@ -102,39 +135,61 @@ export default function WaterIntakeCalculator() {
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Hot and humid environments usually require more water intake.
+              </p>
             </div>
 
-            {/* Calculate Button */}
-            <button
-              onClick={calculateWaterIntake}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Calculate Water Intake
-            </button>
+            {error && (
+              <p className="text-sm text-red-600">
+                {error}
+              </p>
+            )}
+
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="submit"
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Calculate Water Intake
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Reset
+              </button>
+            </div>
 
             {/* Results */}
-            {result && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-md">
-                <h2 className="text-lg font-semibold mb-2">Your Daily Water Intake Needs:</h2>
-                <p className="text-3xl font-bold text-blue-600">{result.ml} ml</p>
-                <p className="text-xl text-blue-600">({result.cups} cups)</p>
-                <div className="mt-4 space-y-2 text-sm text-gray-600">
-                  <p>💡 Tips for staying hydrated:</p>
+            {result !== null && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-md space-y-3">
+                <h2 className="text-lg font-semibold">Your Daily Water Intake Needs</h2>
+                <p className="text-3xl font-bold text-blue-600">
+                  {result.ml} ml / day
+                </p>
+                <p className="text-lg text-blue-600">
+                  ≈ {result.liters} liters ({result.cups} cups)
+                </p>
+                <div className="mt-2 space-y-2 text-sm text-gray-600">
+                  <p className="font-medium">How to use this:</p>
                   <ul className="list-disc pl-5 space-y-1">
-                    <li>Keep a water bottle with you throughout the day</li>
-                    <li>Drink a glass of water with each meal</li>
-                    <li>Set reminders on your phone</li>
-                    <li>Drink more during and after exercise</li>
-                    <li>Monitor your urine color - it should be light yellow</li>
+                    <li>Spread your water intake evenly throughout the day.</li>
+                    <li>Drink more before, during, and after exercise.</li>
+                    <li>Increase intake if you sweat a lot or feel thirsty.</li>
+                    <li>Monitor your urine color – light yellow usually indicates good hydration.</li>
                   </ul>
-                  <p className="mt-4 italic">
-                    Note: This is a general guideline. Adjust based on your specific needs and consult with a healthcare provider if needed.
+                  <p className="mt-2 text-xs text-gray-500">
+                    This is a general guideline based on your inputs. People with certain health conditions
+                    (e.g., kidney or heart issues) should follow advice from their healthcare provider.
                   </p>
                 </div>
               </div>
             )}
           </div>
-        </div>
+        </form>
       </div>
     </div>
   )

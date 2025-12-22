@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { format, addMinutes, subMinutes } from 'date-fns'
 
 type CalculationType = 'bedtime' | 'wakeup'
@@ -10,6 +10,7 @@ export default function SleepCalculator() {
   const [time, setTime] = useState('')
   const [results, setResults] = useState<Date[]>([])
   const [showTooltip, setShowTooltip] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Sleep cycle is approximately 90 minutes
   const SLEEP_CYCLE_MINUTES = 90
@@ -18,8 +19,16 @@ export default function SleepCalculator() {
   // Recommended sleep cycles (5-6 cycles = 7.5-9 hours)
   const RECOMMENDED_CYCLES = [5, 6]
 
-  const calculateSleepTimes = () => {
-    if (!time) return
+  const calculateSleepTimes = (e?: FormEvent) => {
+    if (e) e.preventDefault()
+
+    if (!time) {
+      setError('Please choose a time first.')
+      setResults([])
+      return
+    }
+
+    setError(null)
 
     const [hours, minutes] = time.split(':').map(Number)
     const baseTime = new Date()
@@ -27,28 +36,41 @@ export default function SleepCalculator() {
 
     if (calculationType === 'bedtime') {
       // Calculate when to go to bed
-      const times = RECOMMENDED_CYCLES.map(cycles => {
-        return subMinutes(baseTime, (SLEEP_CYCLE_MINUTES * cycles) + FALL_ASLEEP_MINUTES)
-      })
+      const times = RECOMMENDED_CYCLES.map((cycles) =>
+        subMinutes(baseTime, SLEEP_CYCLE_MINUTES * cycles + FALL_ASLEEP_MINUTES),
+      )
       setResults(times)
     } else {
       // Calculate when to wake up
-      const times = RECOMMENDED_CYCLES.map(cycles => {
-        return addMinutes(baseTime, (SLEEP_CYCLE_MINUTES * cycles) + FALL_ASLEEP_MINUTES)
-      })
+      const times = RECOMMENDED_CYCLES.map((cycles) =>
+        addMinutes(baseTime, SLEEP_CYCLE_MINUTES * cycles + FALL_ASLEEP_MINUTES),
+      )
       setResults(times)
     }
+  }
+
+  const handleReset = () => {
+    setTime('')
+    setResults([])
+    setError(null)
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Sleep Time Calculator</h1>
-        <p className="text-gray-600 mb-8">
-          Calculate the best time to wake up or go to bed based on sleep cycles. A typical sleep cycle lasts about 90 minutes, and getting 5-6 complete cycles (7.5-9 hours) is recommended for optimal rest.
+        <p className="text-gray-600 mb-3">
+          Calculate the best time to wake up or go to bed based on sleep cycles.
+        </p>
+        <p className="text-sm text-gray-500 mb-8">
+          A typical sleep cycle lasts about 90 minutes. Many adults feel rested with about 5–6 full cycles
+          (roughly 7.5–9 hours of sleep), but needs can vary from person to person.
         </p>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <form
+          onSubmit={calculateSleepTimes}
+          className="bg-white rounded-lg shadow-sm p-6"
+        >
           <div className="space-y-6">
             {/* Calculation Type Selection */}
             <div>
@@ -82,11 +104,11 @@ export default function SleepCalculator() {
             {/* Time Input */}
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {calculationType === 'bedtime' 
+                {calculationType === 'bedtime'
                   ? 'I want to wake up at:'
                   : 'I want to go to bed at:'}
               </label>
-              <div 
+              <div
                 className="relative"
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
@@ -97,6 +119,7 @@ export default function SleepCalculator() {
                   onChange={(e) => setTime(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   placeholder="HH:MM"
+                  required
                 />
                 {showTooltip && (
                   <div className="absolute left-0 -bottom-12 bg-gray-800 text-white text-sm px-3 py-1 rounded shadow-lg whitespace-nowrap z-10">
@@ -104,15 +127,33 @@ export default function SleepCalculator() {
                   </div>
                 )}
               </div>
+              <p className="mt-1 text-xs text-gray-500">
+                You&apos;ll get a few suggested times that line up with complete sleep cycles.
+              </p>
             </div>
 
-            {/* Calculate Button */}
-            <button
-              onClick={calculateSleepTimes}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Calculate
-            </button>
+            {error && (
+              <p className="text-sm text-red-600">
+                {error}
+              </p>
+            )}
+
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="submit"
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Calculate
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Reset
+              </button>
+            </div>
 
             {/* Results */}
             {results.length > 0 && (
@@ -140,12 +181,17 @@ export default function SleepCalculator() {
                   ))}
                 </div>
                 <p className="mt-4 text-sm text-gray-600">
-                  Note: It takes the average person 15 minutes to fall asleep. These times have been adjusted accordingly.
+                  We assume it takes about {FALL_ASLEEP_MINUTES} minutes to fall asleep. These times have been
+                  adjusted so that you complete full sleep cycles before your target time.
+                </p>
+                <p className="mt-2 text-xs text-gray-500">
+                  This tool is for general guidance only and does not replace advice from a healthcare professional
+                  or sleep specialist.
                 </p>
               </div>
             )}
           </div>
-        </div>
+        </form>
 
         {/* Sleep Tips */}
         <div className="mt-8 bg-white rounded-lg shadow-sm p-6">

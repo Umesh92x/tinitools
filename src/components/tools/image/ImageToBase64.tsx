@@ -17,6 +17,8 @@ export function ImageToBase64() {
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
 
+  const MAX_SIZE_MB = 5
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) {
       setToastMessage('Please select a valid image file')
@@ -26,6 +28,13 @@ export function ImageToBase64() {
     }
 
     const file = acceptedFiles[0]
+
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      setToastMessage(`Please select an image smaller than ${MAX_SIZE_MB} MB`)
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
     if (!file.type.startsWith('image/')) {
       setToastMessage('Please select a valid image file')
       setToastType('error')
@@ -81,6 +90,36 @@ export function ImageToBase64() {
     }
   }
 
+  const handleCopyImgTag = async () => {
+    if (!image?.base64) return
+
+    const imgTag = `<img src="${image.base64}" alt="${image.file.name}" />`
+    try {
+      await navigator.clipboard.writeText(imgTag)
+      setToastMessage('<img> tag with Base64 source copied to clipboard!')
+      setToastType('success')
+      setShowToast(true)
+    } catch (err) {
+      setToastMessage('Failed to copy <img> tag to clipboard')
+      setToastType('error')
+      setShowToast(true)
+    }
+  }
+
+  const handleDownloadText = () => {
+    if (!image?.base64) return
+
+    const blob = new Blob([image.base64], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${image.file.name}-base64.txt`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   const handleReset = () => {
     if (image) {
       URL.revokeObjectURL(image.preview)
@@ -105,7 +144,7 @@ export function ImageToBase64() {
             )}
           </div>
           <p className="text-sm text-gray-500">
-            Supports PNG, JPG, GIF, and WebP
+            Supports PNG, JPG, GIF, and WebP (up to {MAX_SIZE_MB} MB)
           </p>
         </div>
       </div>
@@ -151,12 +190,24 @@ export function ImageToBase64() {
             />
           </div>
 
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleCopy}
               className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Copy Base64
+            </button>
+            <button
+              onClick={handleCopyImgTag}
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Copy &lt;img&gt; Tag
+            </button>
+            <button
+              onClick={handleDownloadText}
+              className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+            >
+              Download as .txt
             </button>
             <button
               onClick={handleReset}

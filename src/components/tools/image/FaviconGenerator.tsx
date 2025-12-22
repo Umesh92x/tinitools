@@ -26,6 +26,7 @@ export function FaviconGenerator() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+  const MAX_SIZE_MB = 5
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) {
@@ -36,6 +37,13 @@ export function FaviconGenerator() {
     }
 
     const file = acceptedFiles[0]
+
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      setToastMessage(`Please select an image smaller than ${MAX_SIZE_MB} MB`)
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
     if (!file.type.startsWith('image/')) {
       setToastMessage('Please select a valid image file')
       setToastType('error')
@@ -133,6 +141,30 @@ export function FaviconGenerator() {
     })
   }
 
+  const handleCopyHtmlLinks = async () => {
+    if (!generatedFavicons.length) {
+      setToastMessage('Generate favicons first to get HTML link tags')
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
+
+    const snippet = generatedFavicons
+      .map(({ size }) => `<link rel="icon" type="image/png" sizes="${size}x${size}" href="/favicon-${size}x${size}.png">`)
+      .join('\n')
+
+    try {
+      await navigator.clipboard.writeText(snippet)
+      setToastMessage('HTML <link> tags copied to clipboard!')
+      setToastType('success')
+      setShowToast(true)
+    } catch (error) {
+      setToastMessage('Failed to copy HTML <link> tags')
+      setToastType('error')
+      setShowToast(true)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div
@@ -150,7 +182,7 @@ export function FaviconGenerator() {
             )}
           </div>
           <p className="text-sm text-gray-500">
-            Recommended: square image with transparent background (PNG)
+            Recommended: square image with transparent background (PNG), up to {MAX_SIZE_MB} MB
           </p>
         </div>
       </div>
@@ -208,12 +240,20 @@ export function FaviconGenerator() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900">Generated Favicons</h3>
-            <button
-              onClick={downloadAllFavicons}
-              className="text-sm text-indigo-600 hover:text-indigo-500"
-            >
-              Download All
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCopyHtmlLinks}
+                className="text-sm text-blue-600 hover:text-blue-500"
+              >
+                Copy HTML &lt;link&gt; tags
+              </button>
+              <button
+                onClick={downloadAllFavicons}
+                className="text-sm text-indigo-600 hover:text-indigo-500"
+              >
+                Download All
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {generatedFavicons.map(({ size, dataUrl }) => (

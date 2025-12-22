@@ -18,7 +18,7 @@ import {
 
 const categories = [
   {
-    name: 'Text Tools',
+    name: 'Text & Writing Tools',
     description: 'Text manipulation, formatting, and writing utilities',
     href: '/text',
     icon: DocumentTextIcon,
@@ -27,6 +27,10 @@ const categories = [
       { name: 'Line Break Remover', href: '/text/line-breaks' },
       { name: 'Text to Speech', href: '/text/text-to-speech' },
       { name: 'Password Generator', href: '/text/password' },
+      { name: 'Lorem Ipsum Generator', href: '/text/lorem-ipsum' },
+      { name: 'Text Statistics', href: '/text/statistics' },
+      { name: 'Text Diff Checker', href: '/text/diff' },
+      { name: 'Markdown Preview', href: '/text/markdown' },
     ],
   },
   {

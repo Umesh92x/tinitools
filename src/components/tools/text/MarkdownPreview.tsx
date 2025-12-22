@@ -52,6 +52,7 @@ Try editing the text on the left to see the preview update in real-time!`
 
 export function MarkdownPreview() {
   const [markdown, setMarkdown] = useState(defaultMarkdown)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
@@ -84,6 +85,72 @@ export function MarkdownPreview() {
     setToastMessage('Content cleared')
     setToastType('success')
     setShowToast(true)
+  }
+
+  const exportToPDF = () => {
+    try {
+      const previewElement = document.querySelector('.markdown-preview')
+      if (!previewElement) {
+        setToastMessage('Preview not found')
+        setToastType('error')
+        setShowToast(true)
+        return
+      }
+
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) {
+        setToastMessage('Popup blocked. Please allow popups to export PDF.')
+        setToastType('error')
+        setShowToast(true)
+        return
+      }
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Markdown Export</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 20px;
+                line-height: 1.6;
+                color: #333;
+              }
+              h1 { font-size: 2em; margin-top: 0; }
+              h2 { font-size: 1.5em; margin-top: 1.5em; }
+              h3 { font-size: 1.25em; margin-top: 1.25em; }
+              code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+              pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+              table { border-collapse: collapse; width: 100%; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              @media print {
+                body { margin: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            ${previewElement.innerHTML}
+          </body>
+        </html>
+      `)
+      printWindow.document.close()
+      
+      setTimeout(() => {
+        printWindow.print()
+        setToastMessage('PDF export initiated!')
+        setToastType('success')
+        setShowToast(true)
+      }, 250)
+    } catch (error) {
+      setToastMessage('Error exporting to PDF')
+      setToastType('error')
+      setShowToast(true)
+    }
   }
 
   return (
@@ -122,19 +189,39 @@ export function MarkdownPreview() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className={`p-6 rounded-lg shadow-sm ${
+            theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+          }`}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className={`text-lg font-medium ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
                 Preview
               </h3>
-              <button
-                onClick={copyHtml}
-                className="text-sm text-indigo-600 hover:text-indigo-500"
-              >
-                Copy HTML
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                  className="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                >
+                  {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+                </button>
+                <button
+                  onClick={copyHtml}
+                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                >
+                  Copy HTML
+                </button>
+                <button
+                  onClick={exportToPDF}
+                  className="text-sm text-red-600 hover:text-red-500"
+                >
+                  Export PDF
+                </button>
+              </div>
             </div>
-            <div className="prose max-w-none markdown-preview">
+            <div className={`prose max-w-none markdown-preview ${
+              theme === 'dark' ? 'prose-invert' : ''
+            }`}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex]}

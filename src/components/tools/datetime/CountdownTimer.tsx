@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react'
 import { AdUnit } from '@/components/ads/AdUnit'
 import { Toast } from '@/components/ui/Toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
 
 interface TimeLeft {
   days: number
@@ -25,6 +34,7 @@ export function CountdownTimer() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false)
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout
@@ -41,6 +51,7 @@ export function CountdownTimer() {
           setToastMessage('Countdown completed!')
           setToastType('success')
           setShowToast(true)
+          setShowCompletionDialog(true)
           return
         }
 
@@ -59,6 +70,16 @@ export function CountdownTimer() {
       }
     }
   }, [isRunning, targetDate, targetTime])
+
+  const setPresetMinutesFromNow = (minutesFromNow: number) => {
+    const now = new Date()
+    const target = new Date(now.getTime() + minutesFromNow * 60 * 1000)
+    const iso = target.toISOString()
+    const datePart = iso.split('T')[0]
+    const timePart = target.toTimeString().slice(0, 5)
+    setTargetDate(datePart)
+    setTargetTime(timePart)
+  }
 
   const startCountdown = () => {
     if (!eventName.trim()) {
@@ -143,6 +164,22 @@ export function CountdownTimer() {
                 onChange={(e) => setTargetTime(e.target.value)}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs text-gray-500">Quick presets (from now)</p>
+              <div className="flex flex-wrap gap-2">
+                {[5, 10, 15, 30, 60].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setPresetMinutesFromNow(m)}
+                    className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50"
+                  >
+                    +{m} min
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex space-x-2">
@@ -240,6 +277,29 @@ export function CountdownTimer() {
         type={toastType}
         onClose={() => setShowToast(false)}
       />
+
+      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Countdown finished</DialogTitle>
+            <DialogDescription>
+              {eventName
+                ? `Your countdown for "${eventName}" has reached zero.`
+                : 'Your countdown has reached zero.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2 text-sm text-gray-600">
+            You can set a new target time or close this message to continue.
+          </div>
+          <DialogFooter className="mt-4">
+            <DialogClose asChild>
+              <button className="inline-flex justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                OK
+              </button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

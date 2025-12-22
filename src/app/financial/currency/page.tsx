@@ -230,7 +230,18 @@ export default function CurrencyConverter() {
 
   const convertCurrency = () => {
     if (!amount || isNaN(Number(amount))) {
-      setError('Please enter a valid amount')
+      setError('Please enter a valid numeric amount.')
+      return
+    }
+
+    const numericAmount = Number(amount)
+    if (numericAmount < 0) {
+      setError('Amount cannot be negative.')
+      return
+    }
+
+    if (!exchangeRates.length) {
+      setError('Exchange rates are not loaded yet. Please wait a moment and try again.')
       return
     }
 
@@ -242,7 +253,7 @@ export default function CurrencyConverter() {
       const targetUsdRate = exchangeRates.find(rate => rate.code === toCurrency)?.rate || 1
       
       // Convert to USD first, then to target currency
-      const amountInUsd = Number(amount) / baseUsdRate
+      const amountInUsd = numericAmount / baseUsdRate
       const convertedAmount = amountInUsd * targetUsdRate
       
       setResult(convertedAmount)

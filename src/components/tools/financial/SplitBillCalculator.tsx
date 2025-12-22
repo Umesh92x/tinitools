@@ -57,14 +57,14 @@ export function SplitBillCalculator() {
 
   const validateInputs = () => {
     if (people.some((person) => !person.name.trim())) {
-      setToastMessage('Please enter all names')
+      setToastMessage('Please enter a name for each person.')
       setToastType('error')
       setShowToast(true)
       return false
     }
 
     if (people.some((person) => !person.amount.trim())) {
-      setToastMessage('Please enter all amounts')
+      setToastMessage('Please enter the amount paid for each person (use 0 if they did not pay).')
       setToastType('error')
       setShowToast(true)
       return false
@@ -72,7 +72,7 @@ export function SplitBillCalculator() {
 
     const amounts = people.map((person) => parseFloat(person.amount))
     if (amounts.some((amount) => isNaN(amount) || amount < 0)) {
-      setToastMessage('Please enter valid amounts')
+      setToastMessage('Please enter valid non-negative amounts.')
       setToastType('error')
       setShowToast(true)
       return false

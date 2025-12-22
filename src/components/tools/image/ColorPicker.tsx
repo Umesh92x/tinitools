@@ -29,6 +29,7 @@ export function ColorPicker() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const MAX_SIZE_MB = 5
 
   const rgbToHex = (r: number, g: number, b: number) => {
     return '#' + [r, g, b].map(x => {
@@ -131,6 +132,13 @@ export function ColorPicker() {
       return
     }
 
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      setToastMessage(`Please select an image smaller than ${MAX_SIZE_MB} MB`)
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = () => {
       const dataUrl = reader.result as string
@@ -167,8 +175,11 @@ export function ColorPicker() {
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    // Map click coordinates from displayed size to actual canvas pixel coordinates
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    const x = (e.clientX - rect.left) * scaleX
+    const y = (e.clientY - rect.top) * scaleY
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
@@ -267,7 +278,7 @@ export function ColorPicker() {
                 )}
               </div>
               <p className="text-sm text-gray-500">
-                Click anywhere on the image to pick a color
+                Click anywhere on the image to pick a color (supports up to {MAX_SIZE_MB} MB images)
               </p>
             </div>
           </div>

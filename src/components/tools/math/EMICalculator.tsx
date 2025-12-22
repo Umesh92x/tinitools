@@ -29,7 +29,7 @@ export function EMICalculator() {
 
   const validateInputs = () => {
     if (!loanAmount || !interestRate || !loanTenure) {
-      setToastMessage('Please fill in all fields')
+      setToastMessage('Please fill in loan amount, interest rate, and tenure.')
       setToastType('error')
       setShowToast(true)
       return false
@@ -40,14 +40,21 @@ export function EMICalculator() {
     const tenure = parseFloat(loanTenure)
 
     if (isNaN(amount) || isNaN(rate) || isNaN(tenure)) {
-      setToastMessage('Please enter valid numbers')
+      setToastMessage('Please enter valid numeric values.')
       setToastType('error')
       setShowToast(true)
       return false
     }
 
-    if (amount <= 0 || rate <= 0 || tenure <= 0) {
-      setToastMessage('Values must be greater than 0')
+    if (amount <= 0 || tenure <= 0) {
+      setToastMessage('Loan amount and tenure must be greater than 0.')
+      setToastType('error')
+      setShowToast(true)
+      return false
+    }
+
+    if (rate < 0) {
+      setToastMessage('Interest rate cannot be negative.')
       setToastType('error')
       setShowToast(true)
       return false
@@ -63,10 +70,21 @@ export function EMICalculator() {
     const R = parseFloat(interestRate) / (12 * 100) // Monthly interest rate
     const N = parseFloat(loanTenure) * 12 // Total number of months
 
-    // EMI formula: P * R * (1 + R)^N / ((1 + R)^N - 1)
-    const monthlyPayment = (P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1)
-    const totalPayment = monthlyPayment * N
-    const totalInterest = totalPayment - P
+    let monthlyPayment: number
+    let totalPayment: number
+    let totalInterest: number
+
+    if (R === 0) {
+      // Simple division when there is 0% interest
+      monthlyPayment = P / N
+      totalPayment = P
+      totalInterest = 0
+    } else {
+      // EMI formula: P * R * (1 + R)^N / ((1 + R)^N - 1)
+      monthlyPayment = (P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1)
+      totalPayment = monthlyPayment * N
+      totalInterest = totalPayment - P
+    }
 
     // Calculate amortization schedule
     let remainingBalance = P
@@ -127,6 +145,7 @@ export function EMICalculator() {
               onChange={(e) => setLoanAmount(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               placeholder="Enter loan amount"
+              min={1}
             />
           </div>
 
@@ -141,7 +160,12 @@ export function EMICalculator() {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               placeholder="Enter annual interest rate"
               step="0.01"
+              min={0}
+              max={100}
             />
+            <p className="mt-1 text-xs text-gray-500">
+              You can use 0% for interest-free or promotional loans.
+            </p>
           </div>
 
           <div>
@@ -154,7 +178,12 @@ export function EMICalculator() {
               onChange={(e) => setLoanTenure(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               placeholder="Enter loan tenure in years"
+              min={0.5}
+              max={40}
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Most home and auto loans fall between 1 and 30 years.
+            </p>
           </div>
 
           <div className="flex gap-4">

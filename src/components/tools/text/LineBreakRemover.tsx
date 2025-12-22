@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Toast } from '@/components/ui/Toast'
 import { AdUnit } from '@/components/ads/AdUnit'
 
@@ -14,10 +14,10 @@ export function LineBreakRemover() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  const handleRemoveLineBreaks = () => {
+  // Real-time processing
+  useEffect(() => {
     if (!input.trim()) {
-      setToastMessage('Please enter some text')
-      setShowToast(true)
+      setOutput('')
       return
     }
 
@@ -43,9 +43,7 @@ export function LineBreakRemover() {
     }
 
     setOutput(result)
-    setToastMessage('Line breaks removed successfully!')
-    setShowToast(true)
-  }
+  }, [input, mode, customSeparator])
 
   const handleCopy = async () => {
     try {
@@ -164,12 +162,13 @@ export function LineBreakRemover() {
         </div>
       </div>
 
-      <button
-        onClick={handleRemoveLineBreaks}
-        className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        Remove Line Breaks
-      </button>
+      {input && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+          <p className="text-sm text-blue-800">
+            <strong>Tip:</strong> Processing happens automatically as you type! Changes update in real-time.
+          </p>
+        </div>
+      )}
 
       <AdUnit type="in-article" className="my-8" />
 
