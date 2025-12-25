@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { 
   DocumentTextIcon, 
@@ -14,6 +17,7 @@ import {
   AcademicCapIcon,
   HeartIcon,
   BanknotesIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 
 const categories = [
@@ -221,53 +225,303 @@ const categories = [
   },
 ]
 
+// Popular/Featured tools
+const popularTools = [
+  { name: 'PDF Merger', href: '/pdf/merge', category: 'PDF Tools', icon: DocumentIcon },
+  { name: 'Image Resizer', href: '/image/resizer', category: 'Image Tools', icon: PhotoIcon },
+  { name: 'JSON Formatter', href: '/data/json-formatter', category: 'Data Tools', icon: CodeBracketIcon },
+  { name: 'QR Code Generator', href: '/file/qr-code', category: 'File Tools', icon: HashtagIcon },
+  { name: 'Case Converter', href: '/text/case-converter', category: 'Text Tools', icon: DocumentTextIcon },
+  { name: 'Password Generator', href: '/text/password', category: 'Text Tools', icon: SparklesIcon },
+  { name: 'EMI Calculator', href: '/financial/emi', category: 'Financial Tools', icon: CalculatorIcon },
+  { name: 'Todo List', href: '/productivity/todo', category: 'Productivity Tools', icon: ClipboardIcon },
+]
+
 export default function Home() {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Flatten all tools from all categories for search (deduplicated by href)
+  const allTools = useMemo(() => {
+    const toolsMap = new Map<string, { name: string; href: string; category: string; icon: any }>()
+    
+    // Add tools from categories
+    categories.forEach((category) => {
+      category.featured.forEach((tool) => {
+        // Use href as unique key to prevent duplicates
+        if (!toolsMap.has(tool.href)) {
+          toolsMap.set(tool.href, {
+            name: tool.name,
+            href: tool.href,
+            category: category.name,
+            icon: category.icon,
+          })
+        }
+      })
+    })
+    
+    // Add popular tools (will skip if already exists)
+    popularTools.forEach((tool) => {
+      if (!toolsMap.has(tool.href)) {
+        toolsMap.set(tool.href, {
+          name: tool.name,
+          href: tool.href,
+          category: tool.category,
+          icon: tool.icon,
+        })
+      }
+    })
+    
+    return Array.from(toolsMap.values())
+  }, [])
+
+  // Filter and rank tools based on search query
+  const filteredTools = useMemo(() => {
+    if (!searchQuery.trim()) return []
+    
+    const query = searchQuery.toLowerCase().trim()
+    
+    const tools = allTools
+      .filter((tool) => {
+        const nameLower = tool.name.toLowerCase()
+        
+        // Only match based on tool name, not category
+        // This ensures "password" only matches "Password Generator", not other tools
+        // and "pdf" only matches tools with "pdf" in the name
+        return nameLower.includes(query)
+      })
+      .map((tool) => {
+        const nameLower = tool.name.toLowerCase()
+        const categoryLower = tool.category.toLowerCase()
+        let score = 0
+        
+        // Exact match gets highest score
+        if (nameLower === query) score += 1000
+        // Starts with query gets high score
+        else if (nameLower.startsWith(query)) score += 500
+        // Word starts with query gets medium-high score
+        else if (nameLower.split(/\s+/).some(word => word.startsWith(query))) score += 300
+        // Contains query gets lower score
+        else if (nameLower.includes(query)) score += 100
+        
+        return { ...tool, score }
+      })
+      .sort((a, b) => b.score - a.score)
+      // Deduplicate by href to remove duplicates
+      .filter((tool, index, self) => 
+        index === self.findIndex(t => t.href === tool.href)
+      )
+      .map(({ score, ...tool }) => tool) // Remove score from final result
+    
+    return tools
+  }, [searchQuery, allTools])
+
+  // Filter categories based on search query
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories
+    
+    const query = searchQuery.toLowerCase().trim()
+    return categories.filter((category) => {
+      const categoryMatches = category.name.toLowerCase().includes(query) ||
+        category.description.toLowerCase().includes(query)
+      const toolMatches = category.featured.some((tool) =>
+        tool.name.toLowerCase().includes(query)
+      )
+      return categoryMatches || toolMatches
+    })
+  }, [searchQuery])
+
   return (
-    <div className="py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Hero Section */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          <div className="text-center">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 mb-6">
+              Free Tools to Make
+              <br />
+              <span className="text-indigo-600">Your Life Simple</span>
+            </h1>
+            <p className="mt-6 text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto">
+              We offer PDF, image, text, and other online tools to make your life easier
+            </p>
+            
+            {/* Search Bar */}
+            <div className="mt-10 max-w-2xl mx-auto">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-6 w-6 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search for tools..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="block w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Statistics Section */}
+      <div className="bg-indigo-600 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-3xl sm:text-4xl font-bold mb-2">200+</div>
+              <div className="text-indigo-100 text-sm sm:text-base">Online Tools</div>
+            </div>
+            <div>
+              <div className="text-3xl sm:text-4xl font-bold mb-2">100%</div>
+              <div className="text-indigo-100 text-sm sm:text-base">Free Forever</div>
+            </div>
+            <div>
+              <div className="text-3xl sm:text-4xl font-bold mb-2">No Sign-Up</div>
+              <div className="text-indigo-100 text-sm sm:text-base">Required</div>
+            </div>
+            <div>
+              <div className="text-3xl sm:text-4xl font-bold mb-2">Privacy</div>
+              <div className="text-indigo-100 text-sm sm:text-base">Focused</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Results */}
+      {searchQuery.trim() && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Search Results
+            </h2>
+            <p className="text-gray-600">
+              Found {filteredTools.length} tool{filteredTools.length !== 1 ? 's' : ''} matching "{searchQuery}"
+            </p>
+          </div>
+
+          {filteredTools.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredTools.map((tool) => (
+                <Link
+                  key={tool.href}
+                  href={tool.href}
+                  className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 hover:border-indigo-300"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                      <tool.icon className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 truncate">
+                        {tool.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1">{tool.category}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No tools found matching your search.</p>
+              <p className="text-gray-400 text-sm mt-2">Try a different search term.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Popular Tools Section - Only show when not searching */}
+      {!searchQuery.trim() && (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-            Free Online Tools for Everyone
-          </h1>
-          <p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto">
-            Simple, fast, and free online utilities to help you with your daily tasks.
-            Privacy-focused, reliable tools that just work.
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            Our Most Popular Tools
+          </h2>
+          <p className="text-lg text-gray-600">
+            We present the best of the best. All free, no catch
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {categories.map((category) => (
-            <div
-              key={category.name}
-              className="group relative bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200/50"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {popularTools.map((tool) => (
+            <Link
+              key={tool.href}
+              href={tool.href}
+              className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 hover:border-indigo-300"
             >
-              <div className="flex items-center gap-x-4">
-                <div className="flex-shrink-0">
-                  <category.icon className="h-8 w-8 text-indigo-600" aria-hidden="true" />
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                  <tool.icon className="h-6 w-6 text-indigo-600" />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  <Link href={category.href} className="hover:text-indigo-600 transition-colors">
-                    <span className="absolute inset-0" aria-hidden="true" />
-                    {category.name}
-                  </Link>
-                </h2>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 truncate">
+                    {tool.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">{tool.category}</p>
+                </div>
               </div>
-              <p className="mt-4 text-base text-gray-600">{category.description}</p>
-              <div className="mt-4 space-y-2">
-                {category.featured.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block text-sm text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
+      )}
+
+      {/* All Categories Section - Only show when not searching */}
+      {!searchQuery.trim() && (
+        <div className="bg-gray-50 py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                All Tools by Category
+              </h2>
+              <p className="text-lg text-gray-600">
+                Explore our complete collection of free online tools
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {categories.map((category) => (
+              <div
+                key={category.name}
+                className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 hover:border-indigo-300"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                    <category.icon className="h-6 w-6 text-indigo-600" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900 group-hover:text-indigo-600">
+                    <Link href={category.href}>
+                      {category.name}
+                    </Link>
+                  </h2>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">{category.description}</p>
+                <div className="space-y-2">
+                  {category.featured.slice(0, 5).map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="block text-sm text-gray-600 hover:text-indigo-600 transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                  {category.featured.length > 5 && (
+                    <Link
+                      href={category.href}
+                      className="block text-sm font-medium text-indigo-600 hover:text-indigo-700 mt-2"
+                    >
+                      View all {category.featured.length} tools →
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      )}
     </div>
   )
 }

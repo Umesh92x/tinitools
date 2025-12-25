@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import {
@@ -111,10 +112,19 @@ export default function Navbar() {
             <div className="flex-shrink-0 flex items-center">
               <Link 
                 href="/" 
-                className="text-xl font-semibold text-indigo-600 hover:text-indigo-500"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                TiniTools
+                <Image
+                  src="/TiniToolsBest.png"
+                  alt="TiniTools Logo"
+                  width={200}
+                  height={100}
+                  style={{ height: '60px', width: 'auto' }}
+                  className="object-contain"
+                  priority
+                  unoptimized={false}
+                />
               </Link>
             </div>
 
