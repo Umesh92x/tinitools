@@ -8,6 +8,7 @@ import Script from 'next/script';
 import { Suspense } from 'react';
 import JsonLd from "@/components/layout/JsonLd";
 import config from "@/lib/config";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -103,19 +104,21 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <JsonLd />
       </head>
-      <body className={`${inter.className} antialiased min-h-screen flex flex-col bg-gray-50`}>
-        <Suspense fallback={<div className="h-16 bg-white shadow-sm" />}>
-          <Navbar />
-        </Suspense>
-        <main className="flex-grow w-full">
-          <Suspense fallback={<div className="animate-pulse bg-gray-100 rounded-lg h-96 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" />}>
-            {children}
+      <body className={`${inter.className} antialiased min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900`}>
+        <ThemeProvider>
+          <Suspense fallback={<div className="h-16 bg-white dark:bg-gray-800 shadow-sm" />}>
+            <Navbar />
           </Suspense>
-        </main>
-        <Suspense fallback={<div className="h-24 bg-gray-50" />}>
-          <Footer />
-        </Suspense>
-        <Analytics />
+          <main className="flex-grow w-full">
+            <Suspense fallback={<div className="animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg h-96 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" />}>
+              {children}
+            </Suspense>
+          </main>
+          <Suspense fallback={<div className="h-24 bg-gray-50 dark:bg-gray-900" />}>
+            <Footer />
+          </Suspense>
+          <Analytics />
+        </ThemeProvider>
         <Script
           strategy="afterInteractive"
           id="layout-init"
