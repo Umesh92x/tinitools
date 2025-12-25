@@ -62,7 +62,7 @@ export function MultiplicationTable() {
         generatePracticeQuestion()
       }, 1000)
     } else {
-      setPracticeScore(prev => ({ total: prev.total + 1 }))
+      setPracticeScore(prev => ({ correct: prev.correct, total: prev.total + 1 }))
       showMessage(`Incorrect. The answer is ${correctAnswer}`, 'error')
     }
     setPracticeAnswer('')
