@@ -40,7 +40,7 @@ export function CoinFlipper() {
           ...prev,
           [newResult]: prev[newResult] + 1
         }))
-        setFlipHistory(prev => [newResult, ...prev].slice(0, 20))
+        setFlipHistory(prev => ([newResult, ...prev].slice(0, 20) as ('heads' | 'tails')[]))
         setIsFlipping(false)
         setToastMessage(`It's ${newResult}!`)
         setShowToast(true)
@@ -61,7 +61,7 @@ export function CoinFlipper() {
           heads: prev.heads + headsCount,
           tails: prev.tails + tailsCount
         }))
-        setFlipHistory(prev => [...results.reverse(), ...prev].slice(0, 20))
+        setFlipHistory(prev => ([...results.reverse(), ...prev].slice(0, 20) as ('heads' | 'tails')[]))
         setIsFlipping(false)
         setToastMessage(`${numFlips} flips: ${headsCount} heads, ${tailsCount} tails`)
         setShowToast(true)
