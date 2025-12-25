@@ -4,18 +4,18 @@ import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Toast } from '@/components/ui/Toast'
 import { AdUnit } from '@/components/ads/AdUnit'
-import { getDocument, GlobalWorkerOptions, PDFDocumentProxy } from 'pdfjs-dist'
 import { PDFDocument } from 'pdf-lib'
 import JSZip from 'jszip'
 
 interface ConversionOptions {
-  format: 'png' | 'jpeg'
+  format: 'png' | 'jpeg' | 'webp'
   quality: number
   dpi: number
 }
 
 export function PDFToImage() {
   const [file, setFile] = useState<File | null>(null)
+  const [pageCount, setPageCount] = useState<number | null>(null)
   const [converting, setConverting] = useState(false)
   const [progress, setProgress] = useState(0)
   const [options, setOptions] = useState<ConversionOptions>({
@@ -26,21 +26,93 @@ export function PDFToImage() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+  const [error, setError] = useState<string | null>(null)
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [downloadFilename, setDownloadFilename] = useState<string>('')
+  const [status, setStatus] = useState<string>('')
+  const [pdfjs, setPdfjs] = useState<any>(null)
+
+  const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+
+  const showMessage = (message: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage(message)
+    setToastType(type)
+    setShowToast(true)
+  }
 
   useEffect(() => {
-    GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
-  }, [])
+    // Dynamically load PDF.js only on client side
+    if (typeof window !== 'undefined' && !pdfjs) {
+      // Use dynamic import to avoid SSR issues
+      import('pdfjs-dist').then((pdfjsModule) => {
+        // Set PDF.js worker path
+        pdfjsModule.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
+        
+        // Test if worker loads
+        fetch('/pdf.worker.min.js', { method: 'HEAD' })
+          .then(() => {
+            // Worker file found locally
+          })
+          .catch(() => {
+            // Local worker not found, use CDN fallback
+            const pdfjsVersion = '3.11.174'
+            pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.js`
+          })
+        
+        setPdfjs(pdfjsModule)
+      }).catch((err) => {
+        console.error('Failed to load PDF.js:', err)
+        setError('Failed to load PDF processing library. Please refresh the page.')
+      })
+    }
+  }, [pdfjs])
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    setError(null)
     const pdfFile = acceptedFiles[0]
-    if (pdfFile?.type !== 'application/pdf') {
-      setToastMessage('Please upload a PDF file')
-      setToastType('error')
-      setShowToast(true)
+    
+    if (!pdfFile) {
+      setError('No file selected.')
       return
     }
+
+    if (pdfFile.type !== 'application/pdf') {
+      setError('Please upload a PDF file. Other file types are not supported.')
+      showMessage('Please upload a PDF file', 'error')
+      return
+    }
+
+    if (pdfFile.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (pdfFile.size / (1024 * 1024)).toFixed(2)
+      setError(`File size (${fileSizeMB} MB) exceeds the maximum limit of 100 MB.`)
+      showMessage(`File too large: ${fileSizeMB} MB (max 100 MB)`, 'error')
+      return
+    }
+
     setFile(pdfFile)
-  }, [])
+    
+    // Try to get page count (optional - don't block if it fails)
+    if (!pdfjs) {
+      // PDF.js not loaded yet, skip page count
+      return
+    }
+    
+    try {
+      const arrayBuffer = await pdfFile.arrayBuffer()
+      const pdf = await pdfjs.getDocument(arrayBuffer).promise
+      setPageCount(pdf.numPages)
+      showMessage(`PDF loaded: ${pdf.numPages} page${pdf.numPages !== 1 ? 's' : ''}`)
+    } catch (err) {
+      console.error('Error reading PDF for page count:', err)
+      // Don't block conversion - just set pageCount to null
+      setPageCount(null)
+      // Only show error if it's a critical issue
+      if (err instanceof Error && err.message.includes('password')) {
+        setError('PDF is password-protected. Please remove the password and try again.')
+        showMessage('PDF is password-protected', 'error')
+      }
+    }
+  }, [pdfjs])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -49,22 +121,59 @@ export function PDFToImage() {
   })
 
   const convertToImage = async () => {
-    if (!file) return
+    if (!file) {
+      const errorMsg = 'Please upload a PDF file first.'
+      setError(errorMsg)
+      showMessage(errorMsg, 'error')
+      return
+    }
+
+    if (!pdfjs) {
+      const errorMsg = 'PDF processing library is still loading. Please wait a moment and try again.'
+      setError(errorMsg)
+      showMessage(errorMsg, 'error')
+      return
+    }
 
     try {
+      console.log('Starting conversion process...')
       setConverting(true)
       setProgress(0)
+      setError(null)
+      setDownloadUrl(null)
+      setStatus('Loading PDF file...')
+
+      console.log('Conversion options:', { format: options.format, dpi: options.dpi, quality: options.quality })
 
       // Load the PDF document
+      console.log('Loading PDF file...')
       const arrayBuffer = await file.arrayBuffer()
-      const pdf = await getDocument(arrayBuffer).promise
+      console.log('PDF loaded, arrayBuffer size:', arrayBuffer.byteLength)
+      setStatus('Reading PDF pages...')
+      
+      console.log('Initializing PDF.js document...')
+      const loadingTask = pdfjs.getDocument({ data: arrayBuffer })
+      const pdf = await loadingTask.promise
       const totalPages = pdf.numPages
+      console.log('PDF has', totalPages, 'pages')
+      
+      if (totalPages === 0) {
+        throw new Error('PDF has no pages to convert.')
+      }
+      
+      setStatus(`Converting ${totalPages} page${totalPages !== 1 ? 's' : ''} to images...`)
+
+      if (totalPages === 0) {
+        throw new Error('PDF has no pages to convert.')
+      }
 
       // Create a zip file to store all images
       const zip = new JSZip()
 
       // Convert each page
       for (let i = 1; i <= totalPages; i++) {
+        console.log(`Converting page ${i} of ${totalPages}...`)
+        
         // Get the page
         const page = await pdf.getPage(i)
 
@@ -75,10 +184,14 @@ export function PDFToImage() {
         // Create a canvas
         const canvas = document.createElement('canvas')
         const context = canvas.getContext('2d')
-        if (!context) throw new Error('Could not get canvas context')
+        if (!context) {
+          throw new Error('Could not get canvas context. Your browser may not support canvas operations.')
+        }
 
         canvas.width = viewport.width
         canvas.height = viewport.height
+
+        console.log(`Rendering page ${i} at ${canvas.width}x${canvas.height} pixels...`)
 
         // Render PDF page to canvas
         await page.render({
@@ -86,12 +199,40 @@ export function PDFToImage() {
           viewport,
         }).promise
 
+        console.log(`Page ${i} rendered, converting to ${options.format}...`)
+
         // Convert canvas to image blob
-        const blob = await new Promise<Blob>((resolve) => {
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          let mimeType: string
+          let quality: number | undefined
+          
+          switch (options.format) {
+            case 'png':
+              mimeType = 'image/png'
+              break
+            case 'jpeg':
+              mimeType = 'image/jpeg'
+              quality = options.quality / 100
+              break
+            case 'webp':
+              mimeType = 'image/webp'
+              quality = options.quality / 100
+              break
+            default:
+              mimeType = 'image/png'
+          }
+          
           canvas.toBlob(
-            (blob) => resolve(blob!),
-            `image/${options.format}`,
-            options.quality / 100
+            (blob) => {
+              if (blob) {
+                console.log(`Page ${i} converted, blob size:`, blob.size)
+                resolve(blob)
+              } else {
+                reject(new Error(`Failed to convert page ${i} canvas to blob`))
+              }
+            },
+            mimeType,
+            quality
           )
         })
 
@@ -102,28 +243,94 @@ export function PDFToImage() {
         setProgress((i / totalPages) * 100)
       }
 
-      // Generate and download zip
-      const content = await zip.generateAsync({ type: 'blob' })
-      const url = URL.createObjectURL(content)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${file.name.replace('.pdf', '')}-images.zip`
-      document.body.appendChild(a)
-      a.click()
-      URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      console.log('All pages converted, generating ZIP file...')
 
-      setToastMessage('Conversion completed successfully!')
-      setToastType('success')
+      // Generate and download zip
+      console.log('Generating ZIP file...')
+      setStatus('Generating ZIP file...')
+      const content = await zip.generateAsync({ type: 'blob' })
+      console.log('ZIP file generated, size:', content.size)
+      
+      const filename = `${file.name.replace('.pdf', '')}-images.zip`
+      const url = URL.createObjectURL(content)
+      
+      // Store download URL for manual download button
+      setDownloadUrl(url)
+      setDownloadFilename(filename)
+      
+      // Try automatic download
+      try {
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.style.display = 'none'
+        document.body.appendChild(a)
+        a.click()
+        
+        // Clean up after a delay
+        setTimeout(() => {
+          document.body.removeChild(a)
+        }, 1000)
+        
+        console.log('Automatic download triggered')
+        setStatus('Conversion complete! Download started automatically.')
+      } catch (downloadError) {
+        console.error('Automatic download failed:', downloadError)
+        setStatus('Conversion complete! Use the download button below to save your file.')
+      }
+
+      showMessage(`Successfully converted ${totalPages} page${totalPages !== 1 ? 's' : ''} to images!`)
     } catch (error) {
       console.error('Conversion error:', error)
-      setToastMessage('Error converting PDF to images')
-      setToastType('error')
+      const errorMessage = error instanceof Error ? error.message : 'Error converting PDF to images'
+      console.error('Error details:', {
+        message: errorMessage,
+        error,
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      })
+      setError(errorMessage)
+      setStatus(`Error: ${errorMessage}`)
+      setDownloadUrl(null)
+      showMessage(errorMessage, 'error')
+      
     } finally {
       setConverting(false)
       setProgress(0)
-      setShowToast(true)
     }
+  }
+
+  const handleReset = () => {
+    setFile(null)
+    setPageCount(null)
+    setProgress(0)
+    setError(null)
+    setDownloadUrl(null)
+    setDownloadFilename('')
+    setStatus('')
+    setOptions({
+      format: 'png',
+      quality: 90,
+      dpi: 300,
+    })
+  }
+
+  const handleManualDownload = () => {
+    if (!downloadUrl) return
+    
+    const a = document.createElement('a')
+    a.href = downloadUrl
+    a.download = downloadFilename
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    showMessage('Download started!')
+  }
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
   }
 
   return (
@@ -155,7 +362,13 @@ export function PDFToImage() {
               </svg>
               <div className="text-sm text-gray-600">
                 {file ? (
-                  <p>{file.name}</p>
+                  <div className="space-y-1">
+                    <p className="font-medium text-gray-900">{file.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatFileSize(file.size)}
+                      {pageCount !== null && ` • ${pageCount} page${pageCount !== 1 ? 's' : ''}`}
+                    </p>
+                  </div>
                 ) : (
                   <p>
                     Drag & drop a PDF file here, or{' '}
@@ -165,6 +378,31 @@ export function PDFToImage() {
               </div>
             </div>
           </div>
+
+          {!pdfjs && typeof window !== 'undefined' && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-600">Loading PDF processing library...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {file && (
+            <button
+              onClick={() => {
+                setFile(null)
+                setPageCount(null)
+                setError(null)
+              }}
+              className="w-full text-sm text-gray-600 hover:text-gray-800"
+            >
+              Remove file
+            </button>
+          )}
 
           <div className="space-y-4">
             <div>
@@ -176,14 +414,18 @@ export function PDFToImage() {
                 onChange={(e) =>
                   setOptions((prev) => ({
                     ...prev,
-                    format: e.target.value as 'png' | 'jpeg',
+                    format: e.target.value as 'png' | 'jpeg' | 'webp',
                   }))
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               >
-                <option value="png">PNG</option>
-                <option value="jpeg">JPEG</option>
+                <option value="png">PNG (Lossless, preserves transparency)</option>
+                <option value="jpeg">JPEG (Smaller size, good quality)</option>
+                <option value="webp">WebP (Modern format, best compression)</option>
               </select>
+              <p className="mt-1 text-xs text-gray-500">
+                PNG: Lossless with transparency. JPEG: Smaller files, good for photos. WebP: Modern format with excellent compression.
+              </p>
             </div>
 
             <div>
@@ -203,6 +445,9 @@ export function PDFToImage() {
                 }
                 className="mt-1 block w-full"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Higher quality = better image but larger file size. Recommended: 80-95% for JPEG/WebP.
+              </p>
             </div>
 
             <div>
@@ -223,16 +468,33 @@ export function PDFToImage() {
                 }
                 className="mt-1 block w-full"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Higher DPI = sharper images but much larger files. 72 DPI for web, 300 DPI for print.
+              </p>
             </div>
           </div>
 
-          <button
-            onClick={convertToImage}
-            disabled={!file || converting}
-            className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-          >
-            {converting ? 'Converting...' : 'Convert to Images'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                convertToImage()
+              }}
+              disabled={!file || converting || !pdfjs}
+              className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {!pdfjs ? 'Loading PDF library...' : converting ? `Converting... ${Math.round(progress)}%` : 'Convert to Images'}
+            </button>
+            <button
+              onClick={handleReset}
+              disabled={converting}
+              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+            >
+              Reset
+            </button>
+          </div>
         </div>
 
         <div className="bg-gray-50 p-6 rounded-lg">
@@ -261,18 +523,44 @@ export function PDFToImage() {
             </div>
           </div>
 
-          {converting && (
-            <div className="mt-6">
-              <div className="flex justify-between text-sm text-gray-600 mb-1">
-                <span>Converting...</span>
-                <span>{Math.round(progress)}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+          {(converting || status) && (
+            <div className="mt-6 space-y-3">
+              {status && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-700">{status}</p>
+                </div>
+              )}
+              {converting && (
+                <div>
+                  <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>Converting...</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {downloadUrl && (
+            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm font-medium text-green-800 mb-2">
+                ✓ Conversion Complete!
+              </p>
+              <p className="text-sm text-green-700 mb-3">
+                Your images have been converted. If the download didn't start automatically, click the button below.
+              </p>
+              <button
+                onClick={handleManualDownload}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                Download ZIP File
+              </button>
             </div>
           )}
         </div>

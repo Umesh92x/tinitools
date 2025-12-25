@@ -413,7 +413,7 @@ export default function CalorieCalculator() {
     const tdee = bmr * activityMultiplier
     const goalModifier = goals[goal].modifier
     const totalCalories = Math.round(tdee + goalModifier)
-
+    
     setBmrValue(Math.round(bmr))
     setTdeeValue(Math.round(tdee))
     setResult(totalCalories)
@@ -578,12 +578,12 @@ export default function CalorieCalculator() {
 
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <button
+            <button
                 type="submit"
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Calculate Calories
-              </button>
+            >
+              Calculate Calories
+            </button>
               <button
                 type="button"
                 onClick={handleReset}

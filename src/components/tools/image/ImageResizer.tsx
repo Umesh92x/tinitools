@@ -34,18 +34,18 @@ export function ImageResizer() {
       return
     }
 
-    setSelectedFile(file)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const img = new Image()
-      img.onload = () => {
-        setDimensions({ width: img.width, height: img.height })
-        setNewDimensions({ width: img.width, height: img.height })
-        setPreview(e.target?.result as string)
+      setSelectedFile(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          setDimensions({ width: img.width, height: img.height })
+          setNewDimensions({ width: img.width, height: img.height })
+          setPreview(e.target?.result as string)
+        }
+        img.src = e.target?.result as string
       }
-      img.src = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
+      reader.readAsDataURL(file)
   }
 
   const handleDimensionChange = (dimension: 'width' | 'height', value: number) => {
@@ -103,7 +103,7 @@ export function ImageResizer() {
       canvas.width = newDimensions.width
       canvas.height = newDimensions.height
       ctx.drawImage(img, 0, 0, newDimensions.width, newDimensions.height)
-
+      
       const originalType = selectedFile.type
       const mimeType =
         originalType === 'image/jpeg' ||

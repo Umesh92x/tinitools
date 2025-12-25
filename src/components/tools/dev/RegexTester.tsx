@@ -70,6 +70,26 @@ export default function RegexTester() {
     }
   };
 
+  const clearAll = () => {
+    setPattern('');
+    setTestText('');
+    setMatches([]);
+    setError('');
+  };
+
+  const copyMatchesAsJson = async () => {
+    if (!matches.length) {
+      toast.error('No matches to copy');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(matches, null, 2));
+      toast.success('Matches copied as JSON');
+    } catch {
+      toast.error('Failed to copy matches');
+    }
+  };
+
   const getHighlightedText = () => {
     if (!matches.length || error) return testText;
 
@@ -151,6 +171,13 @@ export default function RegexTester() {
               className="min-h-[200px]"
             />
           </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={testRegex}>Test Regex</Button>
+            <Button variant="outline" onClick={clearAll}>
+              Clear
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -162,8 +189,18 @@ export default function RegexTester() {
         <>
           <Card className="p-4">
             <div className="space-y-2">
+              <div className="flex items-center justify-between">
               <h3 className="font-medium">Matches ({matches.length})</h3>
+                {matches.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={copyMatchesAsJson}>
+                    Copy as JSON
+                  </Button>
+                )}
+              </div>
               <div className="font-mono whitespace-pre-wrap break-all">
+                {testText && pattern && !matches.length && (
+                  <span className="text-sm text-gray-500">No matches found.</span>
+                )}
                 {getHighlightedText()}
               </div>
             </div>
@@ -176,7 +213,10 @@ export default function RegexTester() {
                 <div className="space-y-2">
                   {matches.map((match, idx) => (
                     <div key={idx} className="p-2 bg-secondary rounded">
-                      <p>Match {idx + 1}: <span className="font-mono">{match.text}</span></p>
+                      <p>
+                        Match {idx + 1}:{' '}
+                        <span className="font-mono break-all">{match.text}</span>
+                      </p>
                       <p>Index: {match.index}</p>
                       {match.groups && Object.keys(match.groups).length > 0 && (
                         <div>

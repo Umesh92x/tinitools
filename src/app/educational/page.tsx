@@ -1,15 +1,15 @@
 import CategoryLayout from '@/components/layout/CategoryLayout'
-import { Calculator, Table2, Atom, BookOpen } from 'lucide-react'
+import { Calculator, Table2, Atom, BookOpen, Award, GraduationCap, FileText } from 'lucide-react'
 
 export const metadata = {
   title: 'Educational Tools - TiniTools',
-  description: 'A collection of educational tools for learning and teaching.',
+  description: 'A collection of educational tools for learning and teaching. Includes calculators, study tools, and reference materials.',
 }
 
 const tools = [
   {
     name: 'Multiplication Table Generator',
-    description: 'Generate multiplication tables with customizable ranges and formats.',
+    description: 'Generate multiplication tables with practice mode and quiz. Perfect for learning math.',
     icon: Table2,
     href: '/educational/multiplication-table',
   },
@@ -30,6 +30,24 @@ const tools = [
     description: 'Advanced calculator with scientific functions and unit conversions.',
     icon: Calculator,
     href: '/educational/calculator',
+  },
+  {
+    name: 'Grade Calculator',
+    description: 'Calculate your final grade with weighted assignments and exams.',
+    icon: Award,
+    href: '/educational/grade-calculator',
+  },
+  {
+    name: 'GPA Calculator',
+    description: 'Calculate your GPA (Grade Point Average) with multiple courses.',
+    icon: GraduationCap,
+    href: '/educational/gpa-calculator',
+  },
+  {
+    name: 'Flashcard Generator',
+    description: 'Create and study flashcards online. Perfect for memorizing terms and concepts.',
+    icon: FileText,
+    href: '/educational/flashcards',
   },
 ]
 

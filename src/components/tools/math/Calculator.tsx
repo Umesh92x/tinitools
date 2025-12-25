@@ -19,6 +19,12 @@ export function Calculator() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
   const [memory, setMemory] = useState<number>(0)
 
+  const showMessage = (message: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage(message)
+    setToastType(type)
+    setShowToast(true)
+  }
+
   const handleNumber = (num: string) => {
     if (display === '0' || display === 'Error') {
       setDisplay(num)
@@ -56,33 +62,25 @@ export function Calculator() {
   const handleMemoryAdd = () => {
     if (display !== 'Error') {
       setMemory(memory + parseFloat(display))
-      setToastMessage('Added to memory')
-      setToastType('success')
-      setShowToast(true)
+      showMessage('Added to memory')
     }
   }
 
   const handleMemorySubtract = () => {
     if (display !== 'Error') {
       setMemory(memory - parseFloat(display))
-      setToastMessage('Subtracted from memory')
-      setToastType('success')
-      setShowToast(true)
+      showMessage('Subtracted from memory')
     }
   }
 
   const handleMemoryRecall = () => {
     setDisplay(memory.toString())
-    setToastMessage('Memory recalled')
-    setToastType('success')
-    setShowToast(true)
+    showMessage('Memory recalled')
   }
 
   const handleMemoryClear = () => {
     setMemory(0)
-    setToastMessage('Memory cleared')
-    setToastType('success')
-    setShowToast(true)
+    showMessage('Memory cleared')
   }
 
   const calculate = () => {
@@ -105,17 +103,28 @@ export function Calculator() {
       setExpression('')
     } catch (error) {
       setDisplay('Error')
-      setToastMessage('Invalid expression')
-      setToastType('error')
-      setShowToast(true)
+      showMessage('Invalid expression', 'error')
     }
   }
 
   const clearHistory = () => {
     setHistory([])
-    setToastMessage('History cleared')
-    setToastType('success')
-    setShowToast(true)
+    showMessage('History cleared')
+  }
+
+  const recallFromHistory = (item: HistoryItem) => {
+    setDisplay(item.result)
+    setExpression('')
+    showMessage('Result recalled from history')
+  }
+
+  const copyResult = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      showMessage('Result copied to clipboard')
+    } catch {
+      showMessage('Failed to copy result', 'error')
+    }
   }
 
   return (
@@ -293,13 +302,26 @@ export function Calculator() {
               history.map((item, index) => (
                 <div
                   key={index}
-                  className="p-3 bg-gray-50 rounded-lg"
+                  className="p-3 bg-gray-50 rounded-lg flex items-center justify-between gap-3 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => recallFromHistory(item)}
                 >
+                  <div className="flex-1">
                   <div className="text-sm text-gray-600">{item.expression}</div>
                   <div className="text-lg font-mono">{item.result}</div>
                   <div className="text-xs text-gray-500">
                     {item.timestamp.toLocaleTimeString()}
                   </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      copyResult(item.result)
+                    }}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+                  >
+                    Copy
+                  </button>
                 </div>
               ))
             )}

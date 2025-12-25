@@ -23,7 +23,7 @@ const tools = [
   {
       title: 'Hashtag Generator',
       description: 'Generate relevant hashtags for your social media posts.',
-      href: '/social/hashtag-generator',
+      href: '/social/hashtags',
       icon: Hash,
     },
     {
@@ -59,7 +59,7 @@ const tools = [
     {
       title: 'Caption Generator',
       description: 'Generate creative captions for your social media posts.',
-      href: '/social/caption-generator',
+      href: '/social/caption',
       icon: Sparkles,
     },
   ]

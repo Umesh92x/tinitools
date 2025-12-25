@@ -85,7 +85,7 @@ export default function RepCounter() {
       setFormError('Please fill in reps, sets, seconds per set, and rest time.')
       return;
     }
-
+    
     const repsNum = parseInt(reps, 10)
     const setsNum = parseInt(sets, 10)
     const restNum = parseInt(restTime, 10)

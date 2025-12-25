@@ -27,7 +27,13 @@ export function Base64Tool() {
     }
 
     try {
-      const encoded = btoa(input)
+      const encoder = new TextEncoder()
+      const bytes = encoder.encode(input)
+      let binary = ''
+      bytes.forEach((byte) => {
+        binary += String.fromCharCode(byte)
+      })
+      const encoded = btoa(binary)
       setOutput(encoded)
       setToastMessage('Text encoded successfully!')
       setToastType('success')
@@ -48,7 +54,13 @@ export function Base64Tool() {
     }
 
     try {
-      const decoded = atob(input)
+      const binary = atob(input)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i)
+      }
+      const decoder = new TextDecoder()
+      const decoded = decoder.decode(bytes)
       setOutput(decoded)
       setToastMessage('Text decoded successfully!')
       setToastType('success')

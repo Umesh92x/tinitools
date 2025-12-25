@@ -31,6 +31,7 @@ const categories = [
       { name: 'Text Statistics', href: '/text/statistics' },
       { name: 'Text Diff Checker', href: '/text/diff' },
       { name: 'Markdown Preview', href: '/text/markdown' },
+      { name: 'Phonetic Typing', href: '/text/phonetic-typing' },
     ],
   },
   {
@@ -117,14 +118,18 @@ const categories = [
     ],
   },
   {
-    name: 'Social Tools',
+    name: 'Social Media Tools',
     description: 'Tools for social media management',
     href: '/social',
     icon: HashtagIcon,
     featured: [
-      { name: 'Caption Generator', href: '/social/caption' },
       { name: 'Hashtag Generator', href: '/social/hashtags' },
-      { name: 'Character Counter', href: '/social/counter' },
+      { name: 'Caption Generator', href: '/social/caption' },
+      { name: 'Social Share Generator', href: '/social/share-generator' },
+      { name: 'Link Shortener', href: '/social/link-shortener' },
+      { name: 'Bio Generator', href: '/social/bio-generator' },
+      { name: 'Username Generator', href: '/social/username-generator' },
+      { name: 'QR Code Generator', href: '/social/qr-code' },
     ],
   },
   {
@@ -136,6 +141,9 @@ const categories = [
       { name: 'PDF to Image', href: '/pdf/to-image' },
       { name: 'PDF Merger', href: '/pdf/merge' },
       { name: 'Text to PDF', href: '/pdf/from-text' },
+      { name: 'PDF Splitter', href: '/pdf/split' },
+      { name: 'PDF Rotate', href: '/pdf/rotate' },
+      { name: 'PDF Page Delete', href: '/pdf/delete-pages' },
     ],
   },
   {
@@ -147,6 +155,9 @@ const categories = [
       { name: 'Random Number Generator', href: '/misc/random' },
       { name: 'Coin Flip', href: '/misc/coin-flip' },
       { name: 'Pomodoro Timer', href: '/misc/pomodoro' },
+      { name: 'Dice Roller', href: '/misc/dice' },
+      { name: 'Stopwatch', href: '/misc/stopwatch' },
+      { name: 'Countdown Timer', href: '/misc/countdown' },
     ],
   },
   {
@@ -157,8 +168,10 @@ const categories = [
     featured: [
       { name: 'CSV to JSON', href: '/data/csv-to-json' },
       { name: 'JSON to CSV', href: '/data/json-to-csv' },
+      { name: 'JSON Formatter', href: '/data/json-formatter' },
       { name: 'XML Formatter', href: '/data/xml-formatter' },
       { name: 'YAML Validator', href: '/data/yaml-validator' },
+      { name: 'Base64 Encoder/Decoder', href: '/data/base64' },
     ],
   },
   {
@@ -170,6 +183,9 @@ const categories = [
       { name: 'File Hash Calculator', href: '/file/hash' },
       { name: 'QR Code Generator', href: '/file/qr-code' },
       { name: 'File Size Converter', href: '/file/size-converter' },
+      { name: 'File Type Detector', href: '/file/type-detector' },
+      { name: 'File Duplicate Checker', href: '/file/duplicate-checker' },
+      { name: 'File Name Formatter', href: '/file/name-formatter' },
     ],
   },
   {
@@ -183,6 +199,8 @@ const categories = [
       { name: 'Habit Tracker', href: '/productivity/habits' },
       { name: 'Reading Time Calculator', href: '/productivity/reading-time' },
       { name: 'Writing Speed Test', href: '/productivity/typing-speed' },
+      { name: 'Time Tracker', href: '/productivity/time-tracker' },
+      { name: 'Goal Tracker', href: '/productivity/goal-tracker' },
     ],
   },
   {
@@ -195,6 +213,9 @@ const categories = [
       { name: 'Periodic Table Explorer', href: '/educational/periodic-table' },
       { name: 'Math Formula Sheet', href: '/educational/math-formulas' },
       { name: 'Scientific Calculator', href: '/educational/calculator' },
+      { name: 'Grade Calculator', href: '/educational/grade-calculator' },
+      { name: 'GPA Calculator', href: '/educational/gpa-calculator' },
+      { name: 'Flashcard Generator', href: '/educational/flashcards' },
     ],
   },
 ]

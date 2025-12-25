@@ -12,6 +12,7 @@ export default function JsonFormatter() {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [error, setError] = useState('')
+  const [validationMessage, setValidationMessage] = useState('')
 
   const formatJson = (spaces: number = 2) => {
     try {
@@ -23,11 +24,37 @@ export default function JsonFormatter() {
       const formatted = JSON.stringify(parsed, null, spaces)
       setOutput(formatted)
       setError('')
+      setValidationMessage('JSON is valid and has been formatted.')
       toast.success('JSON formatted successfully')
     } catch (err) {
       setError((err as Error).message)
+      setValidationMessage('')
       toast.error('Invalid JSON')
     }
+  }
+
+  const validateJson = () => {
+    try {
+      if (!input.trim()) {
+        toast.error('Please enter some JSON to validate')
+        return
+      }
+      JSON.parse(input)
+      setError('')
+      setValidationMessage('JSON is well‑formed.')
+      toast.success('Valid JSON')
+    } catch (err) {
+      setError((err as Error).message)
+      setValidationMessage('')
+      toast.error('Invalid JSON')
+    }
+  }
+
+  const clearAll = () => {
+    setInput('')
+    setOutput('')
+    setError('')
+    setValidationMessage('')
   }
 
   const copyToClipboard = async () => {
@@ -62,17 +89,29 @@ export default function JsonFormatter() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={() => formatJson(2)}>Format (2 spaces)</Button>
             <Button onClick={() => formatJson(4)}>Format (4 spaces)</Button>
             <Button variant="outline" onClick={() => formatJson(0)}>Minify</Button>
+            <Button variant="outline" onClick={validateJson}>
+              Validate
+            </Button>
+            <Button variant="ghost" onClick={clearAll}>
+              Clear
+            </Button>
           </div>
         </div>
       </Card>
 
       {error && (
         <Card className="p-4 border-red-500">
-          <p className="text-red-500">{error}</p>
+          <p className="text-red-500 text-sm whitespace-pre-wrap break-words">{error}</p>
+        </Card>
+      )}
+
+      {!error && validationMessage && (
+        <Card className="p-4 border-green-500">
+          <p className="text-green-600 text-sm">{validationMessage}</p>
         </Card>
       )}
 

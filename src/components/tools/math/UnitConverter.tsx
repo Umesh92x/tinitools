@@ -111,9 +111,16 @@ export function UnitConverter() {
   const [toUnit, setToUnit] = useState('')
   const [fromValue, setFromValue] = useState('')
   const [result, setResult] = useState('')
+  const [explanation, setExplanation] = useState('')
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+
+  const showMessage = (message: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage(message)
+    setToastType(type)
+    setShowToast(true)
+  }
 
   const handleTypeChange = (newType: ConversionType) => {
     setType(newType)
@@ -121,13 +128,12 @@ export function UnitConverter() {
     setToUnit('')
     setFromValue('')
     setResult('')
+    setExplanation('')
   }
 
   const convert = () => {
     if (!fromUnit || !toUnit || !fromValue) {
-      setToastMessage('Please fill in all fields')
-      setToastType('error')
-      setShowToast(true)
+      showMessage('Please select units and enter a value', 'error')
       return
     }
 
@@ -135,6 +141,10 @@ export function UnitConverter() {
       const value = parseFloat(fromValue)
       if (isNaN(value)) {
         throw new Error('Invalid number')
+      }
+
+      if (type !== 'temperature' && value < 0) {
+        throw new Error('Value cannot be negative for this conversion type')
       }
 
       const fromOption = conversionTypes[type].options.find(opt => opt.value === fromUnit)
@@ -157,19 +167,51 @@ export function UnitConverter() {
         convertedValue = baseValue / toOption.factor
       }
 
-      setResult(convertedValue.toLocaleString(undefined, {
+      const formattedResult = convertedValue.toLocaleString(undefined, {
         maximumFractionDigits: 6,
         minimumFractionDigits: 0,
-      }))
+      })
 
-      setToastMessage('Conversion completed')
-      setToastType('success')
-      setShowToast(true)
+      setResult(formattedResult)
+      setExplanation(
+        `${value.toLocaleString()} ${fromOption.label} is approximately ${formattedResult} ${toOption.label}`
+      )
+
+      showMessage('Conversion completed')
     } catch (error) {
-      setResult('Error')
-      setToastMessage('Invalid input')
-      setToastType('error')
-      setShowToast(true)
+      setResult('')
+      setExplanation('')
+      showMessage(
+        error instanceof Error ? error.message : 'Invalid input. Please check your value and units.',
+        'error'
+      )
+    }
+  }
+
+  const handleReset = () => {
+    setFromUnit('')
+    setToUnit('')
+    setFromValue('')
+    setResult('')
+    setExplanation('')
+  }
+
+  const handleSwapUnits = () => {
+    if (!fromUnit || !toUnit) return
+    setFromUnit(toUnit)
+    setToUnit(fromUnit)
+    // Keep the value as-is; user can reconvert with the new direction
+    setResult('')
+    setExplanation('')
+  }
+
+  const copyResult = async () => {
+    if (!result) return
+    try {
+      await navigator.clipboard.writeText(result)
+      showMessage('Result copied to clipboard')
+    } catch {
+      showMessage('Failed to copy result', 'error')
     }
   }
 
@@ -218,10 +260,11 @@ export function UnitConverter() {
                 Value
               </label>
               <input
-                type="text"
+                type="number"
                 value={fromValue}
                 onChange={(e) => setFromValue(e.target.value)}
                 placeholder="Enter value"
+                inputMode="decimal"
                 className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
@@ -256,17 +299,43 @@ export function UnitConverter() {
                 readOnly
                 className="w-full rounded-md bg-gray-50 border-gray-300 shadow-sm text-gray-700"
               />
+              {explanation && (
+                <p className="mt-1 text-xs text-gray-500">
+                  {explanation}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Convert Button */}
-        <div className="flex justify-center">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-3 justify-center">
           <button
             onClick={convert}
             className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Convert
+          </button>
+          <button
+            type="button"
+            onClick={handleSwapUnits}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+          >
+            Swap units
+          </button>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={copyResult}
+            className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+          >
+            Copy result
           </button>
         </div>
       </div>

@@ -56,7 +56,7 @@ export function MeetingPlanner() {
     const durationMinutes = parseInt(duration, 10) || 60
     const WORK_START_HOUR = 8
     const WORK_END_HOUR = 18
-
+    
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const time = new Date(baseDate)
@@ -68,7 +68,7 @@ export function MeetingPlanner() {
           minute: '2-digit',
           hour12: true,
         })
-
+        
         const timeSlot = {
           time: utcLabel,
           participants: participants.map((p) => {
@@ -81,11 +81,11 @@ export function MeetingPlanner() {
               startHour >= WORK_START_HOUR && endHour <= WORK_END_HOUR
 
             return {
-              name: p.name || `Participant ${p.id}`,
+            name: p.name || `Participant ${p.id}`,
               localTime: zonedDate.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
               }),
               inWorkingHours,
             }

@@ -1,23 +1,19 @@
-import { Metadata } from "next";
-import MultiplicationTable from "@/components/tools/educational/MultiplicationTable";
+import { Metadata } from 'next'
+import { MultiplicationTable } from '@/components/tools/educational/MultiplicationTable'
+import ToolLayout from '@/components/layout/ToolLayout'
 
 export const metadata: Metadata = {
-  title: "Multiplication Table Generator - TiniTools",
-  description: "Generate customizable multiplication tables for learning and practice.",
-};
+  title: 'Multiplication Table Generator - TiniTools',
+  description: 'Generate customizable multiplication tables with practice mode and quiz. Perfect for learning and teaching basic mathematics.',
+}
 
 export default function MultiplicationTablePage() {
   return (
-    <div className="container py-8">
-      <div className="space-y-4">
-        <h1 className="text-4xl font-bold">Multiplication Table Generator</h1>
-        <p className="text-muted-foreground text-lg">
-          Generate multiplication tables with customizable ranges. Perfect for learning and teaching basic mathematics.
-        </p>
-      </div>
-      <div className="mt-8">
-        <MultiplicationTable />
-      </div>
-    </div>
-  );
+    <ToolLayout
+      title="Multiplication Table Generator"
+      description="Generate customizable multiplication tables with practice mode and quiz. Perfect for learning and teaching basic mathematics."
+    >
+      <MultiplicationTable />
+    </ToolLayout>
+  )
 } 

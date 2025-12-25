@@ -148,12 +148,12 @@ export default function WaterIntakeCalculator() {
 
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <button
+            <button
                 type="submit"
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Calculate Water Intake
-              </button>
+            >
+              Calculate Water Intake
+            </button>
               <button
                 type="button"
                 onClick={handleReset}

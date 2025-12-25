@@ -45,6 +45,7 @@ export function PomodoroTimer() {
         clearInterval(intervalId)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, timeLeft])
 
   const handleTimerComplete = () => {

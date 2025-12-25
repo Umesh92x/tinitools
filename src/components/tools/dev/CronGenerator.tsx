@@ -80,6 +80,36 @@ export default function CronGenerator() {
     dayOfWeek: '',
   });
 
+  const resetAll = () => {
+    setMinutes({
+      value: '*',
+      options: minutes.options,
+    });
+    setHours({
+      value: '*',
+      options: hours.options,
+    });
+    setDayOfMonth({
+      value: '*',
+      options: dayOfMonth.options,
+    });
+    setMonth({
+      value: '*',
+      options: month.options,
+    });
+    setDayOfWeek({
+      value: '*',
+      options: dayOfWeek.options,
+    });
+    setCustomValues({
+      minutes: '',
+      hours: '',
+      dayOfMonth: '',
+      month: '',
+      dayOfWeek: '',
+    });
+  };
+
   const getCronExpression = () => {
     const getValue = (field: keyof typeof customValues, cronField: CronField) => {
       return cronField.value === 'custom' ? customValues[field] : cronField.value;

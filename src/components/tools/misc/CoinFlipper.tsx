@@ -9,36 +9,71 @@ export function CoinFlipper() {
   const [result, setResult] = useState<'heads' | 'tails' | null>(null)
   const [flipCount, setFlipCount] = useState(0)
   const [stats, setStats] = useState({ heads: 0, tails: 0 })
+  const [multipleFlips, setMultipleFlips] = useState('1')
+  const [flipHistory, setFlipHistory] = useState<('heads' | 'tails')[]>([])
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  const flipCoin = () => {
+  const flipCoin = async () => {
     if (isFlipping) return
+
+    const numFlips = parseInt(multipleFlips) || 1
+    if (numFlips < 1 || numFlips > 100) {
+      setToastMessage('Please enter a number between 1 and 100')
+      setShowToast(true)
+      return
+    }
 
     setIsFlipping(true)
     setResult(null)
 
-    // Random flip duration between 2-3 seconds
-    const flipDuration = 2000 + Math.random() * 1000
+    const results: ('heads' | 'tails')[] = []
+    const flipDuration = 1500 + Math.random() * 500
 
-    setTimeout(() => {
-      const newResult = Math.random() < 0.5 ? 'heads' : 'tails'
-      setResult(newResult)
-      setFlipCount(prev => prev + 1)
-      setStats(prev => ({
-        ...prev,
-        [newResult]: prev[newResult] + 1
-      }))
-      setIsFlipping(false)
-      setToastMessage(`It's ${newResult}!`)
-      setShowToast(true)
-    }, flipDuration)
+    // For multiple flips, show animation for first flip, then batch the rest
+    if (numFlips === 1) {
+      setTimeout(() => {
+        const newResult = Math.random() < 0.5 ? 'heads' : 'tails'
+        setResult(newResult)
+        setFlipCount(prev => prev + 1)
+        setStats(prev => ({
+          ...prev,
+          [newResult]: prev[newResult] + 1
+        }))
+        setFlipHistory(prev => [newResult, ...prev].slice(0, 20))
+        setIsFlipping(false)
+        setToastMessage(`It's ${newResult}!`)
+        setShowToast(true)
+      }, flipDuration)
+    } else {
+      // Multiple flips
+      setTimeout(() => {
+        for (let i = 0; i < numFlips; i++) {
+          results.push(Math.random() < 0.5 ? 'heads' : 'tails')
+        }
+        
+        const headsCount = results.filter(r => r === 'heads').length
+        const tailsCount = results.filter(r => r === 'tails').length
+        
+        setResult(results[0]) // Show first result
+        setFlipCount(prev => prev + numFlips)
+        setStats(prev => ({
+          heads: prev.heads + headsCount,
+          tails: prev.tails + tailsCount
+        }))
+        setFlipHistory(prev => [...results.reverse(), ...prev].slice(0, 20))
+        setIsFlipping(false)
+        setToastMessage(`${numFlips} flips: ${headsCount} heads, ${tailsCount} tails`)
+        setShowToast(true)
+      }, flipDuration)
+    }
   }
 
   const resetStats = () => {
     setFlipCount(0)
     setStats({ heads: 0, tails: 0 })
     setResult(null)
+    setFlipHistory([])
     setToastMessage('Statistics reset')
     setShowToast(true)
   }
@@ -64,6 +99,23 @@ export function CoinFlipper() {
               </div>
             </div>
 
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Number of Flips
+              </label>
+              <input
+                type="number"
+                value={multipleFlips}
+                onChange={(e) => setMultipleFlips(e.target.value)}
+                min="1"
+                max="100"
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Flip 1-100 coins at once
+              </p>
+            </div>
+
             <div className="flex justify-center space-x-4 mt-6">
               <button
                 onClick={flipCoin}
@@ -74,7 +126,7 @@ export function CoinFlipper() {
                     : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
                 }`}
               >
-                Flip Coin
+                {isFlipping ? 'Flipping...' : `Flip ${multipleFlips === '1' ? 'Coin' : `${multipleFlips} Coins`}`}
               </button>
               <button
                 onClick={resetStats}
@@ -115,6 +167,26 @@ export function CoinFlipper() {
               )}
             </div>
           </div>
+
+          {flipHistory.length > 0 && (
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Flips</h3>
+              <div className="flex flex-wrap gap-2">
+                {flipHistory.slice(0, 20).map((result, index) => (
+                  <div
+                    key={index}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      result === 'heads'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {result === 'heads' ? 'H' : 'T'}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-gray-50 p-6 rounded-lg">
             <h3 className="text-lg font-medium text-gray-900 mb-4">

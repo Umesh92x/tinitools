@@ -9,9 +9,41 @@ export function EpochConverter() {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [isMilliseconds, setIsMilliseconds] = useState(false)
+  const [useUtc, setUseUtc] = useState(true)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+
+  const applyDateTimeFromDate = (dateObj: Date) => {
+    if (useUtc) {
+      const iso = dateObj.toISOString()
+      setDate(iso.split('T')[0])
+      setTime(iso.split('T')[1].substring(0, 5))
+    } else {
+      const year = dateObj.getFullYear()
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+      const day = String(dateObj.getDate()).padStart(2, '0')
+      const hours = String(dateObj.getHours()).padStart(2, '0')
+      const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+      setDate(`${year}-${month}-${day}`)
+      setTime(`${hours}:${minutes}`)
+    }
+  }
+
+  const parseDateTimeToMs = () => {
+    const [y, m, d] = date.split('-').map(Number)
+    const [hh, mm] = time.split(':').map(Number)
+
+    if ([y, m, d, hh, mm].some((v) => Number.isNaN(v))) {
+      throw new Error('Invalid date/time')
+    }
+
+    if (useUtc) {
+      return Date.UTC(y, m - 1, d, hh, mm)
+    }
+
+    return new Date(y, m - 1, d, hh, mm).getTime()
+  }
 
   const convertToDate = () => {
     if (!timestamp.trim()) {
@@ -32,8 +64,10 @@ export function EpochConverter() {
         throw new Error('Invalid timestamp')
       }
 
-      setDate(dateObj.toISOString().split('T')[0])
-      setTime(dateObj.toISOString().split('T')[1].substring(0, 5))
+      applyDateTimeFromDate(dateObj)
+      setToastMessage('Timestamp converted to date/time.')
+      setToastType('success')
+      setShowToast(true)
     } catch (error) {
       setToastMessage('Invalid timestamp format')
       setToastType('error')
@@ -50,13 +84,14 @@ export function EpochConverter() {
     }
 
     try {
-      const dateObj = new Date(`${date}T${time}`)
-      if (isNaN(dateObj.getTime())) {
-        throw new Error('Invalid date/time')
-      }
-
-      const epochTime = dateObj.getTime()
-      setTimestamp(isMilliseconds ? epochTime.toString() : Math.floor(epochTime / 1000).toString())
+      const ms = parseDateTimeToMs()
+      const epochTime = ms
+      setTimestamp(
+        isMilliseconds ? epochTime.toString() : Math.floor(epochTime / 1000).toString(),
+      )
+      setToastMessage('Date/time converted to timestamp.')
+      setToastType('success')
+      setShowToast(true)
     } catch (error) {
       setToastMessage('Invalid date/time format')
       setToastType('error')
@@ -66,9 +101,55 @@ export function EpochConverter() {
 
   const getCurrentTimestamp = () => {
     const now = new Date()
-    setTimestamp(isMilliseconds ? now.getTime().toString() : Math.floor(now.getTime() / 1000).toString())
-    setDate(now.toISOString().split('T')[0])
-    setTime(now.toISOString().split('T')[1].substring(0, 5))
+    setTimestamp(
+      isMilliseconds ? now.getTime().toString() : Math.floor(now.getTime() / 1000).toString(),
+    )
+    applyDateTimeFromDate(now)
+    setToastMessage('Filled current time.')
+    setToastType('success')
+    setShowToast(true)
+  }
+
+  const handleCopyTimestamp = async () => {
+    if (!timestamp.trim()) {
+      setToastMessage('Nothing to copy. Generate or enter a timestamp first.')
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(timestamp)
+      setToastMessage('Timestamp copied to clipboard!')
+      setToastType('success')
+      setShowToast(true)
+    } catch {
+      setToastMessage('Failed to copy timestamp.')
+      setToastType('error')
+      setShowToast(true)
+    }
+  }
+
+  const handleCopyIso = async () => {
+    if (!date || !time) {
+      setToastMessage('Please select date and time to copy as ISO.')
+      setToastType('error')
+      setShowToast(true)
+      return
+    }
+
+    try {
+      const ms = parseDateTimeToMs()
+      const iso = new Date(ms).toISOString()
+      await navigator.clipboard.writeText(iso)
+      setToastMessage('ISO 8601 date-time copied to clipboard!')
+      setToastType('success')
+      setShowToast(true)
+    } catch {
+      setToastMessage('Failed to copy ISO string.')
+      setToastType('error')
+      setShowToast(true)
+    }
   }
 
   return (
@@ -149,6 +230,22 @@ export function EpochConverter() {
                   Now
                 </button>
               </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyTimestamp}
+                  className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Copy Timestamp
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyIso}
+                  className="flex-1 bg-emerald-600 text-white px-3 py-2 rounded-md text-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                >
+                  Copy ISO Date-Time
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -166,7 +263,9 @@ export function EpochConverter() {
                   <br />
                   2. Toggle "Use milliseconds" if needed
                   <br />
-                  3. Click "Convert" to see the date and time
+                  3. Choose whether to interpret as UTC or local time
+                  <br />
+                  4. Click "Convert" to see the date and time
                 </p>
               </div>
               <div>
@@ -174,9 +273,11 @@ export function EpochConverter() {
                 <p className="text-sm text-gray-600">
                   1. Select a date and time
                   <br />
-                  2. Click "Convert to Timestamp"
+                  2. Choose UTC vs local interpretation
                   <br />
-                  3. Use "Now" to get current date/time
+                  3. Click "Convert to Timestamp"
+                  <br />
+                  4. Use "Now" to get current date/time
                 </p>
               </div>
               <div>
@@ -187,6 +288,34 @@ export function EpochConverter() {
                   Milliseconds: 1609459200000
                 </p>
               </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Settings
+            </h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  checked={useUtc}
+                  onChange={() => setUseUtc(true)}
+                />
+                <span className="ml-2">
+                  Use UTC for conversions (recommended for backend and API work)
+                </span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  checked={!useUtc}
+                  onChange={() => setUseUtc(false)}
+                />
+                <span className="ml-2">Use local browser time zone</span>
+              </label>
             </div>
           </div>
 

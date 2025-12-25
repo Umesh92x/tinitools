@@ -86,12 +86,10 @@ const config = {
       fs: false,
       canvas: false,
       path: false,
-    }
-
-    // Add aliases
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      'pdfjs-dist': 'pdfjs-dist/webpack',
+      url: false,
+      stream: false,
+      crypto: false,
+      util: false,
     }
 
     // Optimize chunks

@@ -80,7 +80,7 @@ export function EMICalculator() {
       totalPayment = P
       totalInterest = 0
     } else {
-      // EMI formula: P * R * (1 + R)^N / ((1 + R)^N - 1)
+    // EMI formula: P * R * (1 + R)^N / ((1 + R)^N - 1)
       monthlyPayment = (P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1)
       totalPayment = monthlyPayment * N
       totalInterest = totalPayment - P

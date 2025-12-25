@@ -1,41 +1,53 @@
-import { Notebook, CheckSquare, LineChart, Timer, Keyboard } from 'lucide-react'
+import { Notebook, CheckSquare, LineChart, Timer, Keyboard, Clock, Target } from 'lucide-react'
 import CategoryLayout from '@/components/layout/CategoryLayout'
 
 export const metadata = {
   title: 'Productivity Tools - TiniTools',
-  description: 'Free online productivity tools to help you stay organized and efficient. Includes note taking, todo list, habit tracker, and more.',
+  description: 'Free online productivity tools to help you stay organized and efficient. Includes note taking, todo list, habit tracker, time tracker, goal tracker, and more.',
 }
 
 const tools = [
   {
     name: 'Note Taking',
-    description: 'Take and save notes with local storage persistence',
+    description: 'Take and save notes with tags, categories, search, and export',
     href: '/productivity/notes',
     icon: Notebook,
   },
   {
     name: 'Todo List',
-    description: 'Manage your tasks and stay organized',
+    description: 'Manage tasks with priorities, categories, subtasks, and filters',
     href: '/productivity/todo',
     icon: CheckSquare,
   },
   {
     name: 'Habit Tracker',
-    description: 'Track and maintain your daily habits',
+    description: 'Track habits with calendar view, statistics, and weekly goals',
     href: '/productivity/habits',
     icon: LineChart,
   },
   {
     name: 'Reading Time Calculator',
-    description: 'Calculate estimated reading time for any text',
+    description: 'Calculate reading time with file upload and customizable speeds',
     href: '/productivity/reading-time',
     icon: Timer,
   },
   {
     name: 'Writing Speed Test',
-    description: 'Test and improve your typing speed',
+    description: 'Test typing speed with history, statistics, and accuracy tracking',
     href: '/productivity/typing-speed',
     icon: Keyboard,
+  },
+  {
+    name: 'Time Tracker',
+    description: 'Track time spent on tasks with categories and statistics',
+    href: '/productivity/time-tracker',
+    icon: Clock,
+  },
+  {
+    name: 'Goal Tracker',
+    description: 'Set and track goals with progress bars, deadlines, and categories',
+    href: '/productivity/goal-tracker',
+    icon: Target,
   },
 ]
 

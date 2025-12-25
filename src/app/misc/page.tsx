@@ -4,27 +4,30 @@ import { ToolGrid } from '@/components/layout/ToolGrid'
 import { 
   Dice5,
   Coins,
-  Timer
+  Timer,
+  Dice1,
+  Clock,
+  Hourglass
 } from 'lucide-react'
 
 export const metadata: Metadata = generateMetadata({
   title: 'Misc Tools',
-  description: 'Other useful utilities',
+  description: 'Useful utilities including random generators, timers, and decision-making tools.',
   path: '/misc',
-  keywords: ['random number generator', 'coin flip', 'pomodoro timer', 'utilities'],
+  keywords: ['random number generator', 'coin flip', 'pomodoro timer', 'dice roller', 'stopwatch', 'countdown timer', 'utilities'],
 })
 
 export default function MiscTools() {
 const tools = [
   {
       title: 'Random Number Generator',
-    description: 'Generate random numbers with custom ranges, decimal places, and multiple numbers at once.',
+    description: 'Generate random numbers with custom ranges, decimal places, presets, and history tracking.',
     href: '/misc/random',
       icon: Dice5,
   },
   {
       title: 'Coin Flip',
-    description: 'Flip a virtual coin with animation. Perfect for making quick decisions.',
+    description: 'Flip virtual coins with animation. Flip multiple coins at once and track statistics.',
     href: '/misc/coin-flip',
       icon: Coins,
   },
@@ -33,7 +36,25 @@ const tools = [
     description: 'Stay focused with customizable Pomodoro timer. Set work and break intervals with notifications.',
     href: '/misc/pomodoro',
       icon: Timer,
-    }
+  },
+  {
+      title: 'Dice Roller',
+    description: 'Roll virtual dice with multiple types. Support for D4, D6, D8, D10, D12, D20, and D100 dice.',
+    href: '/misc/dice',
+      icon: Dice1,
+  },
+  {
+      title: 'Stopwatch',
+    description: 'Precise stopwatch with lap timer functionality. Track time with millisecond accuracy.',
+    href: '/misc/stopwatch',
+      icon: Clock,
+  },
+  {
+      title: 'Countdown Timer',
+    description: 'Set a countdown timer with custom hours, minutes, and seconds. Get notified when time is up.',
+    href: '/misc/countdown',
+      icon: Hourglass,
+  }
 ]
 
   return (

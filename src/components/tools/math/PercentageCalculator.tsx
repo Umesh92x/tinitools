@@ -20,11 +20,15 @@ export function PercentageCalculator() {
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
 
+  const showMessage = (message: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage(message)
+    setToastType(type)
+    setShowToast(true)
+  }
+
   const validateInputs = () => {
     if (!number1.trim() || !number2.trim()) {
-      setToastMessage('Please enter both numbers')
-      setToastType('error')
-      setShowToast(true)
+      showMessage('Please enter both numbers', 'error')
       return false
     }
 
@@ -32,9 +36,12 @@ export function PercentageCalculator() {
     const n2 = parseFloat(number2)
 
     if (isNaN(n1) || isNaN(n2)) {
-      setToastMessage('Please enter valid numbers')
-      setToastType('error')
-      setShowToast(true)
+      showMessage('Please enter valid numbers', 'error')
+      return false
+    }
+
+    if (calculationType === 'change' && n1 === 0) {
+      showMessage('Original value cannot be 0 when calculating percentage change', 'error')
       return false
     }
 
@@ -82,9 +89,7 @@ export function PercentageCalculator() {
     }
 
     setResult(calculationResult)
-    setToastMessage('Calculation completed!')
-    setToastType('success')
-    setShowToast(true)
+    showMessage('Calculation completed!')
   }
 
   const getInputLabels = () => {
@@ -116,6 +121,21 @@ export function PercentageCalculator() {
     setNumber1('')
     setNumber2('')
     setResult(null)
+  }
+
+  const copyResult = async () => {
+    if (!result) return
+    try {
+      await navigator.clipboard.writeText(
+        `${result.result.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        })}`
+      )
+      showMessage('Result copied to clipboard')
+    } catch {
+      showMessage('Failed to copy result', 'error')
+    }
   }
 
   return (
@@ -187,7 +207,7 @@ export function PercentageCalculator() {
         {result && (
           <div className="bg-gray-50 p-6 rounded-lg">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Result</h3>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-3xl font-bold text-indigo-600">
                 {result.result.toLocaleString(undefined, {
                   minimumFractionDigits: 0,
@@ -196,6 +216,13 @@ export function PercentageCalculator() {
                 {calculationType === 'change' && '%'}
               </p>
               <p className="text-sm text-gray-600">{result.explanation}</p>
+              <button
+                type="button"
+                onClick={copyResult}
+                className="mt-2 inline-flex items-center px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+              >
+                Copy result
+              </button>
             </div>
           </div>
         )}

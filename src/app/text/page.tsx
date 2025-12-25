@@ -9,7 +9,8 @@ import {
   KeyRound, 
   FileText,
   GitCompare,
-  FileCode
+  FileCode,
+  Languages
 } from 'lucide-react'
 
 export const metadata: Metadata = generateMetadata({
@@ -68,6 +69,12 @@ const tools = [
     description: 'Live markdown editor with instant preview. Supports GitHub Flavored Markdown and common extensions.',
     href: '/text/markdown',
       icon: FileCode,
+  },
+  {
+      title: 'Phonetic Typing',
+    description: 'Type in English using phonetic transliteration and get instant output in various scripts. Currently supports Hindi.',
+    href: '/text/phonetic-typing',
+      icon: Languages,
   },
 ]
 

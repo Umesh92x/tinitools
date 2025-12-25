@@ -13,6 +13,15 @@ interface JwtParts {
   signature: string;
 }
 
+const decodeBase64Url = (input: string) => {
+  // Replace URL-safe chars and pad with '=' to make length a multiple of 4
+  let base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4 !== 0) {
+    base64 += '=';
+  }
+  return atob(base64);
+};
+
 export default function JwtDecoder() {
   const [token, setToken] = useState('');
   const [decodedToken, setDecodedToken] = useState<JwtParts | null>(null);
@@ -31,8 +40,8 @@ export default function JwtDecoder() {
       }
 
       const decoded: JwtParts = {
-        header: JSON.parse(atob(parts[0])),
-        payload: JSON.parse(atob(parts[1])),
+        header: JSON.parse(decodeBase64Url(parts[0])),
+        payload: JSON.parse(decodeBase64Url(parts[1])),
         signature: parts[2],
       };
 
@@ -44,6 +53,12 @@ export default function JwtDecoder() {
       setDecodedToken(null);
       toast.error('Failed to decode token');
     }
+  };
+
+  const clearAll = () => {
+    setToken('');
+    setDecodedToken(null);
+    setError('');
   };
 
   const copyToClipboard = async (text: string) => {
@@ -130,7 +145,12 @@ export default function JwtDecoder() {
             value={token}
             onChange={(e) => setToken(e.target.value)}
           />
+          <div className="flex gap-2">
           <Button onClick={decodeToken}>Decode Token</Button>
+            <Button variant="ghost" onClick={clearAll}>
+              Clear
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -145,6 +165,13 @@ export default function JwtDecoder() {
           {renderTokenPart('Header', decodedToken.header, token.split('.')[0])}
           {renderTokenPart('Payload', decodedToken.payload, token.split('.')[1])}
           {renderTimestamps()}
+          <Card className="p-4 border-yellow-300 bg-yellow-50">
+            <p className="text-sm text-yellow-800">
+              This tool only <strong>decodes</strong> the JWT and runs entirely in your browser – tokens are
+              not sent to any server. It does <strong>not verify</strong> the signature, issuer, audience, or
+              any other claims, so always rely on your backend or auth provider to enforce security.
+            </p>
+          </Card>
           <Card className="p-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">

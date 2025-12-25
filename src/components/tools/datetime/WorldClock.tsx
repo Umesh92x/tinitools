@@ -44,11 +44,11 @@ export function WorldClock() {
       time: new Date(
         currentTime.toLocaleString('en-US', { timeZone: tz.name }),
       ).toLocaleString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
         hour12: !use24Hour,
-      }),
+        }),
     }))
   }
 

@@ -4,6 +4,22 @@ import { useState } from 'react'
 import { AdUnit } from '@/components/ads/AdUnit'
 import { Toast } from '@/components/ui/Toast'
 
+interface Preset {
+  name: string
+  min: string
+  max: string
+  count: string
+  decimals: string
+}
+
+const presets: Preset[] = [
+  { name: 'Dice (1-6)', min: '1', max: '6', count: '1', decimals: '0' },
+  { name: 'Lottery (1-49)', min: '1', max: '49', count: '6', decimals: '0' },
+  { name: 'Percentage (0-100)', min: '0', max: '100', count: '1', decimals: '2' },
+  { name: 'Decimal (0-1)', min: '0', max: '1', count: '1', decimals: '4' },
+  { name: 'Custom', min: '0', max: '100', count: '1', decimals: '0' },
+]
+
 export function RandomNumberGenerator() {
   const [min, setMin] = useState('0')
   const [max, setMax] = useState('100')
@@ -11,6 +27,8 @@ export function RandomNumberGenerator() {
   const [decimals, setDecimals] = useState('0')
   const [allowDuplicates, setAllowDuplicates] = useState(true)
   const [results, setResults] = useState<number[]>([])
+  const [history, setHistory] = useState<number[][]>([])
+  const [selectedPreset, setSelectedPreset] = useState<string>('Custom')
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
@@ -38,16 +56,29 @@ export function RandomNumberGenerator() {
         throw new Error('Decimal places cannot be negative')
       }
 
-      if (!allowDuplicates && countNum > maxNum - minNum + 1) {
-        throw new Error('Cannot generate more unique numbers than the range allows')
+      // Calculate maximum possible unique numbers based on range and decimals
+      const range = maxNum - minNum
+      const step = Math.pow(10, -decimalsNum)
+      const maxUniqueNumbers = Math.floor(range / step) + 1
+
+      if (!allowDuplicates && countNum > maxUniqueNumbers) {
+        throw new Error(`Cannot generate ${countNum} unique numbers. Maximum possible: ${maxUniqueNumbers}`)
       }
 
       const newResults: number[] = []
       const usedNumbers = new Set<number>()
+      let attempts = 0
+      const maxAttempts = countNum * 1000 // Safety limit to prevent infinite loops
 
-      while (newResults.length < countNum) {
+      while (newResults.length < countNum && attempts < maxAttempts) {
+        attempts++
         const randomNum = Math.random() * (maxNum - minNum) + minNum
         const roundedNum = parseFloat(randomNum.toFixed(decimalsNum))
+
+        // Ensure the rounded number is within bounds
+        if (roundedNum < minNum || roundedNum > maxNum) {
+          continue
+        }
 
         if (!allowDuplicates && usedNumbers.has(roundedNum)) {
           continue
@@ -57,7 +88,12 @@ export function RandomNumberGenerator() {
         usedNumbers.add(roundedNum)
       }
 
+      if (newResults.length < countNum) {
+        throw new Error(`Could not generate ${countNum} unique numbers. Generated ${newResults.length}. Try allowing duplicates or increasing the range.`)
+      }
+
       setResults(newResults)
+      setHistory((prev) => [newResults, ...prev].slice(0, 10)) // Keep last 10 generations
       setToastMessage('Numbers generated successfully!')
       setToastType('success')
       setShowToast(true)
@@ -75,11 +111,46 @@ export function RandomNumberGenerator() {
     setShowToast(true)
   }
 
+  const applyPreset = (presetName: string) => {
+    const preset = presets.find(p => p.name === presetName)
+    if (preset) {
+      setMin(preset.min)
+      setMax(preset.max)
+      setCount(preset.count)
+      setDecimals(preset.decimals)
+      setSelectedPreset(presetName)
+    }
+  }
+
+  const clearHistory = () => {
+    setHistory([])
+    setToastMessage('History cleared!')
+    setToastType('success')
+    setShowToast(true)
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quick Presets
+              </label>
+              <select
+                value={selectedPreset}
+                onChange={(e) => applyPreset(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              >
+                {presets.map((preset) => (
+                  <option key={preset.name} value={preset.name}>
+                    {preset.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -159,14 +230,24 @@ export function RandomNumberGenerator() {
           <div className="bg-gray-50 p-6 rounded-lg">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Results</h3>
-              {results.length > 0 && (
-                <button
-                  onClick={copyToClipboard}
-                  className="text-sm text-indigo-600 hover:text-indigo-500"
-                >
-                  Copy to Clipboard
-                </button>
-              )}
+              <div className="flex gap-2">
+                {results.length > 0 && (
+                  <button
+                    onClick={copyToClipboard}
+                    className="text-sm text-indigo-600 hover:text-indigo-500"
+                  >
+                    Copy
+                  </button>
+                )}
+                {history.length > 0 && (
+                  <button
+                    onClick={clearHistory}
+                    className="text-sm text-gray-600 hover:text-gray-500"
+                  >
+                    Clear History
+                  </button>
+                )}
+              </div>
             </div>
             <div className="bg-white p-4 rounded-md min-h-[100px] break-all">
               {results.length > 0 ? (
@@ -177,9 +258,21 @@ export function RandomNumberGenerator() {
                       className="flex justify-between items-center py-1 border-b border-gray-100 last:border-0"
                     >
                       <span className="text-gray-600">#{index + 1}</span>
-                      <span className="font-medium">{num}</span>
+                      <span className="font-medium text-lg">{num}</span>
                     </div>
                   ))}
+                  {results.length > 1 && (
+                    <div className="pt-2 mt-2 border-t border-gray-200">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Sum:</span>
+                        <span className="font-medium">{results.reduce((a, b) => a + b, 0).toFixed(parseInt(decimals))}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mt-1">
+                        <span className="text-gray-600">Average:</span>
+                        <span className="font-medium">{(results.reduce((a, b) => a + b, 0) / results.length).toFixed(parseInt(decimals))}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-gray-500 text-center">
@@ -188,6 +281,20 @@ export function RandomNumberGenerator() {
               )}
             </div>
           </div>
+
+          {history.length > 0 && (
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">History</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {history.map((hist, index) => (
+                  <div key={index} className="bg-white p-3 rounded-md text-sm">
+                    <div className="text-gray-500 mb-1">Generation #{history.length - index}</div>
+                    <div className="text-gray-700">{hist.join(', ')}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-gray-50 p-6 rounded-lg">
             <h3 className="text-lg font-medium text-gray-900 mb-4">

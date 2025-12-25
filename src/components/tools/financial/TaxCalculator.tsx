@@ -236,11 +236,11 @@ export function TaxCalculator() {
         return false
       }
     } else {
-      if (numDeductions > numIncome) {
+    if (numDeductions > numIncome) {
         setToastMessage('Deductions cannot be more than income.')
-        setToastType('error')
-        setShowToast(true)
-        return false
+      setToastType('error')
+      setShowToast(true)
+      return false
       }
     }
 
@@ -523,18 +523,18 @@ export function TaxCalculator() {
             </div>
 
             {country === 'india' && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-md">
+            <div className="mt-4 p-4 bg-blue-50 rounded-md">
                 <h4 className="text-sm font-medium text-blue-800 mb-2">
                   Tax Slabs ({indiaRegime === 'new' ? 'New Regime (approx.)' : 'Old Regime (approx.)'})
                 </h4>
                 {indiaRegime === 'new' ? (
-                  <ul className="text-sm text-blue-700 space-y-1">
+              <ul className="text-sm text-blue-700 space-y-1">
                     <li>Up to ₹3L: 0%</li>
                     <li>₹3L to ₹7L: 5%</li>
                     <li>₹7L to ₹10L: 10%</li>
                     <li>₹10L to ₹12L: 15%</li>
                     <li>₹12L to ₹15L: 20%</li>
-                    <li>Above ₹15L: 30%</li>
+                <li>Above ₹15L: 30%</li>
                     <li>Section 87A rebate: Effective tax is 0 up to ₹7L of taxable income.</li>
                     <li>* Additional 4% Health & Education Cess on tax payable.</li>
                   </ul>
@@ -549,9 +549,9 @@ export function TaxCalculator() {
                       * Surcharge may apply at higher income levels (10% & above). This calculator currently
                       ignores surcharge and uses slab rates + cess only.
                     </li>
-                  </ul>
+              </ul>
                 )}
-              </div>
+            </div>
             )}
           </div>
         )}

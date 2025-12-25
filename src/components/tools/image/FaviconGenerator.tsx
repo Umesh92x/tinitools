@@ -247,12 +247,12 @@ export function FaviconGenerator() {
               >
                 Copy HTML &lt;link&gt; tags
               </button>
-              <button
-                onClick={downloadAllFavicons}
-                className="text-sm text-indigo-600 hover:text-indigo-500"
-              >
-                Download All
-              </button>
+            <button
+              onClick={downloadAllFavicons}
+              className="text-sm text-indigo-600 hover:text-indigo-500"
+            >
+              Download All
+            </button>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

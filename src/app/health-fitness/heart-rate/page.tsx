@@ -191,27 +191,27 @@ export default function HeartRateCalculator() {
                 )}
 
                 <div className="space-y-6">
-                  {zones.map((zone, index) => (
-                    <div
-                      key={index}
-                      className="p-4 rounded-lg"
-                      style={{
-                        backgroundColor: `rgba(59, 130, 246, ${0.1 + index * 0.15})`,
-                      }}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-semibold">{zone.name}</h3>
-                        <span className="text-sm text-gray-600">{zone.description}</span>
-                      </div>
-                      <div className="text-2xl font-bold text-blue-600 mb-2">
-                        {zone.min} - {zone.max} bpm
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <p><strong>Intensity:</strong> {zone.intensity}</p>
-                        <p><strong>Benefits:</strong> {zone.benefits}</p>
-                      </div>
+                {zones.map((zone, index) => (
+                  <div
+                    key={index}
+                    className="p-4 rounded-lg"
+                    style={{
+                      backgroundColor: `rgba(59, 130, 246, ${0.1 + index * 0.15})`,
+                    }}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-lg font-semibold">{zone.name}</h3>
+                      <span className="text-sm text-gray-600">{zone.description}</span>
                     </div>
-                  ))}
+                    <div className="text-2xl font-bold text-blue-600 mb-2">
+                      {zone.min} - {zone.max} bpm
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p><strong>Intensity:</strong> {zone.intensity}</p>
+                      <p><strong>Benefits:</strong> {zone.benefits}</p>
+                    </div>
+                  </div>
+                ))}
                 </div>
 
                 <div className="mt-4 p-4 bg-gray-50 rounded-md">

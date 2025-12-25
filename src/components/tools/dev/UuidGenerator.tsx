@@ -18,6 +18,7 @@ export default function UuidGenerator() {
   const [version, setVersion] = useState<UuidVersion>('v4');
   const [format, setFormat] = useState<UuidFormat>('standard');
   const [multipleUuids, setMultipleUuids] = useState(false);
+  const [count, setCount] = useState(10);
 
   const generateUuid = () => {
     const uuid = version === 'v4' ? uuidv4() : uuidv1();
@@ -36,10 +37,10 @@ export default function UuidGenerator() {
   };
 
   const generateUuids = () => {
-    const count = multipleUuids ? 10 : 1;
-    const newUuids = Array.from({ length: count }, generateUuid);
+    const total = multipleUuids ? Math.min(Math.max(count, 1), 100) : 1;
+    const newUuids = Array.from({ length: total }, generateUuid);
     setUuids(newUuids);
-    toast.success(`Generated ${count} UUID${count > 1 ? 's' : ''}`);
+    toast.success(`Generated ${total} UUID${total > 1 ? 's' : ''}`);
   };
 
   const copyToClipboard = async (text: string) => {
@@ -111,6 +112,21 @@ export default function UuidGenerator() {
             />
             <Label>Generate Multiple UUIDs</Label>
           </div>
+          {multipleUuids && (
+            <div className="space-y-1">
+              <Label htmlFor="uuid-count">How many?</Label>
+              <input
+                id="uuid-count"
+                type="number"
+                min={1}
+                max={100}
+                value={count}
+                onChange={(e) => setCount(parseInt(e.target.value) || 1)}
+                className="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+              />
+              <p className="text-xs text-gray-500">Generate between 1 and 100 UUIDs at once.</p>
+            </div>
+          )}
 
           <Button onClick={generateUuids} className="w-full">
             <RefreshCwIcon className="w-4 h-4 mr-2" />

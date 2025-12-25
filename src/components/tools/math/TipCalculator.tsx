@@ -13,15 +13,36 @@ interface TipResult {
 
 const tipPercentages = [5, 10, 15, 18, 20, 25]
 
+type CurrencyCode = 'USD' | 'INR' | 'EUR' | 'GBP' | 'AUD' | 'CAD'
+
+const currencies: { code: CurrencyCode; symbol: string; label: string }[] = [
+  { code: 'USD', symbol: '$', label: 'USD – US Dollar' },
+  { code: 'INR', symbol: '₹', label: 'INR – Indian Rupee' },
+  { code: 'EUR', symbol: '€', label: 'EUR – Euro' },
+  { code: 'GBP', symbol: '£', label: 'GBP – British Pound' },
+  { code: 'AUD', symbol: 'A$', label: 'AUD – Australian Dollar' },
+  { code: 'CAD', symbol: 'C$', label: 'CAD – Canadian Dollar' },
+]
+
 export function TipCalculator() {
   const [billAmount, setBillAmount] = useState('')
   const [tipPercentage, setTipPercentage] = useState(15)
   const [customTip, setCustomTip] = useState('')
   const [numPeople, setNumPeople] = useState('1')
+  const [currency, setCurrency] = useState<CurrencyCode>('USD')
   const [result, setResult] = useState<TipResult | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+
+  const currencyInfo = currencies.find((c) => c.code === currency) ?? currencies[0]
+  const currencySymbol = currencyInfo.symbol
+
+  const showMessage = (message: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage(message)
+    setToastType(type)
+    setShowToast(true)
+  }
 
   const calculateTip = () => {
     try {
@@ -53,14 +74,14 @@ export function TipCalculator() {
         tipPerPerson,
       })
 
-      setToastMessage('Tip calculated successfully')
-      setToastType('success')
-      setShowToast(true)
+      if (tip > 100) {
+        showMessage('Very high tip – double-check the percentage', 'error')
+      } else {
+        showMessage('Tip calculated successfully')
+      }
     } catch (error) {
       setResult(null)
-      setToastMessage(error instanceof Error ? error.message : 'Invalid input')
-      setToastType('error')
-      setShowToast(true)
+      showMessage(error instanceof Error ? error.message : 'Invalid input', 'error')
     }
   }
 
@@ -82,9 +103,37 @@ export function TipCalculator() {
     setTipPercentage(0)
   }
 
+  const effectiveTipPercent = () => {
+    if (!result) return null
+    const bill = parseFloat(billAmount)
+    if (!bill || bill <= 0) return null
+    return (result.tipAmount / bill) * 100
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-sm space-y-6">
+        {/* Currency Selection */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-gray-700">Currency</p>
+            <p className="text-xs text-gray-500">
+              Only changes the currency symbol, not the actual amount.
+            </p>
+          </div>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+            className="mt-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+          >
+            {currencies.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Bill Amount */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -92,7 +141,7 @@ export function TipCalculator() {
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">$</span>
+              <span className="text-gray-500">{currencySymbol}</span>
             </div>
             <input
               type="number"
@@ -177,22 +226,31 @@ export function TipCalculator() {
                 <div className="p-4 bg-white rounded-lg">
                   <p className="text-sm text-gray-600">Tip Amount</p>
                   <p className="text-2xl font-semibold text-indigo-600">
-                    ${result.tipAmount.toFixed(2)}
+                    {currencySymbol}
+                    {result.tipAmount.toFixed(2)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    per person: ${result.tipPerPerson.toFixed(2)}
+                    per person: {currencySymbol}
+                    {result.tipPerPerson.toFixed(2)}
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg">
                   <p className="text-sm text-gray-600">Total Amount</p>
                   <p className="text-2xl font-semibold text-indigo-600">
-                    ${result.totalAmount.toFixed(2)}
+                    {currencySymbol}
+                    {result.totalAmount.toFixed(2)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    per person: ${result.perPerson.toFixed(2)}
+                    per person: {currencySymbol}
+                    {result.perPerson.toFixed(2)}
                   </p>
                 </div>
               </div>
+              {effectiveTipPercent() !== null && (
+                <div className="text-xs text-gray-500">
+                  Effective tip: {effectiveTipPercent()!.toFixed(1)}% of the bill.
+                </div>
+              )}
             </div>
           </div>
         )}

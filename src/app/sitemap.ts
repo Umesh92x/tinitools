@@ -16,7 +16,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
         'statistics',
         'password',
         'diff',
-        'markdown'
+        'markdown',
+        'phonetic-typing'
       ] 
     },
     { 
@@ -34,9 +35,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { category: 'dev', tools: ['json', 'minify', 'meta-tags'] },
     { category: 'math', tools: ['percentage', 'emi', 'gst'] },
     { category: 'social', tools: ['hashtags', 'counter', 'caption'] },
-    { category: 'pdf', tools: ['to-image', 'merge', 'from-text'] },
-    { category: 'misc', tools: ['random', 'coin-flip', 'pomodoro'] },
+    { category: 'pdf', tools: ['to-image', 'merge', 'from-text', 'split', 'rotate', 'delete-pages'] },
+    { category: 'misc', tools: ['random', 'coin-flip', 'pomodoro', 'dice', 'stopwatch', 'countdown'] },
     { category: 'educational', tools: ['multiplication-table', 'periodic-table', 'math-formulas', 'calculator'] },
+    { category: 'data', tools: ['csv-to-json', 'json-to-csv', 'json-formatter', 'xml-formatter', 'yaml-validator', 'base64'] },
+    { category: 'file', tools: ['hash', 'qr-code', 'size-converter', 'type-detector', 'metadata', 'duplicate-checker', 'name-formatter'] },
+    { category: 'productivity', tools: ['notes', 'todo', 'habits', 'reading-time', 'typing-speed', 'time-tracker', 'goal-tracker'] },
+    { category: 'educational', tools: ['multiplication-table', 'periodic-table', 'math-formulas', 'calculator', 'grade-calculator', 'gpa-calculator', 'flashcards'] },
   ]
 
   // Get all blog posts
