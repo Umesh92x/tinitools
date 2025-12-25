@@ -10,7 +10,14 @@ interface ThemeContextType {
   resolvedTheme: 'dark' | 'light'
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+// Default context value for SSR
+const defaultContextValue: ThemeContextType = {
+  theme: 'light',
+  setTheme: () => {},
+  resolvedTheme: 'light',
+}
+
+const ThemeContext = createContext<ThemeContextType>(defaultContextValue)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light')
@@ -43,13 +50,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('theme', theme)
   }, [theme, mounted])
 
-
-  if (!mounted) {
-    return <>{children}</>
+  // Always provide the context, even during SSR
+  const contextValue: ThemeContextType = {
+    theme,
+    setTheme,
+    resolvedTheme: mounted ? resolvedTheme : 'light',
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   )
@@ -57,7 +66,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme() {
   const context = useContext(ThemeContext)
-  if (context === undefined) {
+  // Context is always defined now (has default value), but we keep this check for safety
+  if (!context) {
     throw new Error('useTheme must be used within a ThemeProvider')
   }
   return context
