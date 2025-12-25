@@ -30,12 +30,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
         'heart-rate'
       ] 
     },
-    { category: 'image', tools: ['resizer', 'base64', 'color-picker'] },
+    { category: 'image', tools: ['resizer', 'base64', 'color-picker', 'favicon'] },
     { category: 'datetime', tools: ['calculator', 'countdown', 'epoch'] },
     { category: 'dev', tools: ['json', 'minify', 'meta-tags'] },
     { category: 'math', tools: ['percentage', 'emi', 'gst'] },
     { category: 'social', tools: ['hashtags', 'counter', 'caption'] },
-    { category: 'pdf', tools: ['to-image', 'merge', 'from-text', 'split', 'rotate', 'delete-pages'] },
+    { category: 'pdf', tools: ['to-image', 'merge', 'from-text', 'split', 'rotate', 'delete-pages', 'sign'] },
     { category: 'misc', tools: ['random', 'coin-flip', 'pomodoro', 'dice', 'stopwatch', 'countdown'] },
     { category: 'educational', tools: ['multiplication-table', 'periodic-table', 'math-formulas', 'calculator'] },
     { category: 'data', tools: ['csv-to-json', 'json-to-csv', 'json-formatter', 'xml-formatter', 'yaml-validator', 'base64'] },

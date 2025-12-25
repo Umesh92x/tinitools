@@ -144,6 +144,7 @@ const categories = [
       { name: 'PDF Splitter', href: '/pdf/split' },
       { name: 'PDF Rotate', href: '/pdf/rotate' },
       { name: 'PDF Page Delete', href: '/pdf/delete-pages' },
+      { name: 'PDF Sign Tool', href: '/pdf/sign' },
     ],
   },
   {

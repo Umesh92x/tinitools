@@ -7,7 +7,8 @@ import {
   FileText,
   Scissors,
   RotateCw,
-  Trash2
+  Trash2,
+  PenTool
 } from 'lucide-react'
 
 export const metadata: Metadata = generateMetadata({
@@ -54,6 +55,12 @@ const tools = [
     description: 'Remove specific pages from PDF documents. Delete page ranges or individual pages.',
     href: '/pdf/delete-pages',
       icon: Trash2,
+  },
+  {
+      title: 'PDF Sign Tool',
+    description: 'Sign PDF documents online. Draw your signature or upload a signature image.',
+    href: '/pdf/sign',
+      icon: PenTool,
   }
 ]
 

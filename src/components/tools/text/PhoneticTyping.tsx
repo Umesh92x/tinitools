@@ -6,336 +6,70 @@ import { Toast } from '@/components/ui/Toast'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import Sanscript from '@indic-transliteration/sanscript'
 
-// Consonant mappings
-const consonants: Record<string, string> = {
-  'k': 'क', 'kh': 'ख', 'g': 'ग', 'gh': 'घ', 'ng': 'ङ',
-  'ch': 'च', 'chh': 'छ', 'j': 'ज', 'jh': 'झ', 'ny': 'ञ',
-  't': 'त', 'th': 'थ', 'd': 'द', 'dh': 'ध', 'n': 'न',
-  'T': 'ट', 'Th': 'ठ', 'D': 'ड', 'Dh': 'ढ', 'N': 'ण',
-  'p': 'प', 'ph': 'फ', 'b': 'ब', 'bh': 'भ', 'm': 'म',
-  'y': 'य', 'r': 'र', 'l': 'ल', 'v': 'व', 'w': 'व',
-  'sh': 'श', 'Sh': 'ष', 's': 'स', 'h': 'ह',
-  'x': 'क्ष', 'ksh': 'क्ष',
-}
-
-// Vowel matras (diacritics)
-const matras: Record<string, string> = {
-  'a': '', 'aa': 'ा', 'i': 'ि', 'ee': 'ी', 'ii': 'ी',
-  'u': 'ु', 'oo': 'ू', 'uu': 'ू', 'e': 'े', 'ai': 'ै',
-  'o': 'ो', 'au': 'ौ', 'ou': 'ौ', 'am': 'ं', 'aha': 'ः',
-  'an': 'ं', 'ah': 'ः',
-}
-
-// Standalone vowels
-const vowels: Record<string, string> = {
-  'a': 'अ', 'aa': 'आ', 'i': 'इ', 'ee': 'ई', 'ii': 'ई',
-  'u': 'उ', 'oo': 'ऊ', 'uu': 'ऊ', 'e': 'ए', 'ai': 'ऐ',
-  'o': 'ओ', 'au': 'औ', 'ou': 'औ', 'am': 'अं', 'aha': 'अः',
-  'an': 'अं', 'ah': 'अः',
-}
-
-// Common word mappings (including English words commonly used in Hindi)
-const wordMap: Record<string, string> = {
-  // Hindi words
-  'namaste': 'नमस्ते', 'dhanyavaad': 'धन्यवाद', 'dhanyavad': 'धन्यवाद',
-  'kripaya': 'कृपया', 'haan': 'हाँ', 'nahi': 'नहीं', 'naheen': 'नहीं',
-  'shayad': 'शायद', 'swagat': 'स्वागत', 'maaf': 'माफ़',
-  'kshama': 'क्षमा', 'main': 'मैं', 'tum': 'तुम', 'aap': 'आप',
-  'hum': 'हम', 'kaise': 'कैसे', 'kya': 'क्या', 'kab': 'कब',
-  'kahan': 'कहाँ', 'kyon': 'क्यों', 'kaun': 'कौन', 'kitna': 'कितना',
-  'yaha': 'यहाँ', 'yahaan': 'यहाँ', 'waha': 'वहाँ', 'wahaan': 'वहाँ',
-  'kare': 'करे', 'karo': 'करो', 'kar': 'कर', 'karna': 'करना',
+// Preprocess input to handle common cases where users omit long vowel markers
+// This makes the transliteration more lenient and user-friendly
+function preprocessInput(text: string): string {
+  if (!text.trim()) return text
   
-  // English words commonly used in Hindi
-  'type': 'टाइप', 'phone': 'फोन', 'computer': 'कंप्यूटर',
-  'internet': 'इंटरनेट', 'email': 'ईमेल', 'message': 'मैसेज',
-  'video': 'वीडियो', 'photo': 'फोटो', 'music': 'म्यूजिक',
-}
-
-// Special characters and numbers
-const specialChars: Record<string, string> = {
-  '.': '।', ',': ',', '?': '?', '!': '!', ':': ':', ';': ';',
-  '0': '०', '1': '१', '2': '२', '3': '३', '4': '४',
-  '5': '५', '6': '६', '7': '७', '8': '८', '9': '९',
-}
-
-// Helper function to check if a character is a vowel
-function isVowel(char: string): boolean {
-  return /[aeiouAEIOU]/.test(char)
-}
-
-// Helper function to get consonant-vowel combination
-function getConsonantVowel(word: string, start: number): { consonant: string; vowel: string; length: number; hasH?: boolean } | null {
-  if (start >= word.length) return null
+  // Process word by word, but preserve all characters including spaces
+  // Use word boundaries to identify complete words
+  return text.replace(/\b([a-zA-Z]+)\b/g, (match, word) => {
+    // Only process alphabetic words
+    if (!/^[a-zA-Z]+$/.test(word)) return match
   
   const originalWord = word
-  const lowerWord = word.toLowerCase()
-  let i = start
-  let consonant = ''
-  let vowel = ''
-  let hasH = false
-  
-  // Check for capital T, D, N (retroflex)
-  const isRetroflex = originalWord[i] === 'T' || originalWord[i] === 'D' || originalWord[i] === 'N'
-  
-  // Try to match consonant clusters first (longest first)
-  const consonantPatterns = ['ksh', 'chh', 'Th', 'Dh', 'kh', 'gh', 'ch', 'jh', 'dh', 'bh', 'ph', 'sh', 'Sh']
-  for (const pattern of consonantPatterns) {
-    if (lowerWord.substring(i).startsWith(pattern)) {
-      consonant = pattern
-      i += pattern.length
-      break
-    }
-  }
-  
-  // If no cluster matched, try single consonant
-  if (!consonant && i < word.length) {
-    const char = originalWord[i]
-    const lowerChar = char.toLowerCase()
+    let processed = word.toLowerCase()
     
-    // Handle retroflex consonants (capital T, D, N)
-    if (isRetroflex) {
-      consonant = char
-      i++
-    } else if (consonants[lowerChar] || /[bcdfghjklmnpqrstvwxyz]/.test(lowerChar)) {
-      consonant = lowerChar
-      i++
-    }
-  }
-  
-  // Check for 'h' after vowel (like in "yaha" -> "यहाँ")
-  if (i < word.length && lowerWord[i] === 'h' && consonant) {
-    // Check if next character is a vowel
-    if (i + 1 < word.length && isVowel(lowerWord[i + 1])) {
-      hasH = true
-      i++ // Skip 'h', it will be handled by the vowel matra
-    }
-  }
-  
-  // Now try to match vowel patterns (longest first)
-  if (i < word.length) {
-    const vowelPatterns = ['aha', 'aha', 'au', 'ou', 'ai', 'ee', 'ii', 'oo', 'uu', 'aa', 'am', 'an', 'ah']
-    for (const pattern of vowelPatterns) {
-      if (lowerWord.substring(i).startsWith(pattern)) {
-        vowel = pattern
-        i += pattern.length
-        break
-      }
+    // Handle "type" → "Taip" (retroflex T for ट)
+    if (processed === 'type') {
+      return 'Taip'
     }
     
-    // If no vowel pattern matched, try single vowel
-    if (!vowel && i < word.length) {
-      const char = lowerWord[i]
-      if (isVowel(char)) {
-        vowel = char
-        i++
-      }
+    // Handle "ane" at end of word (like "jane" → "jaane" for जाने)
+    // Pattern: consonant + a + n + e → consonant + aa + n + e
+    processed = processed.replace(/([bcdfghjklmnpqrstvwxyz])ane$/i, '$1aane')
+    
+    // Handle "are" at end of word (like "kare" → "kaare" for करे)
+    processed = processed.replace(/([bcdfghjklmnpqrstvwxyz])are$/i, '$1aare')
+    
+    // Handle "aha" patterns (like "yaha" → "yahaa" for यहाँ)
+    processed = processed.replace(/([bcdfghjklmnpqrstvwxyz])aha$/i, '$1ahaa')
+    
+    // Handle specific common words
+    if (processed === 'yaha') processed = 'yahaa'
+    if (processed === 'waha') processed = 'wahaa'
+    
+    // Preserve original case for first letter if it was capitalized
+    if (originalWord[0] === originalWord[0].toUpperCase()) {
+      processed = processed.charAt(0).toUpperCase() + processed.slice(1)
     }
-  }
-  
-  // If we have a consonant but no vowel, default to 'a'
-  if (consonant && !vowel) {
-    vowel = 'a'
-  }
-  
-  if (consonant || vowel) {
-    return {
-      consonant: consonant || '',
-      vowel: vowel || '',
-      length: i - start,
-      hasH: hasH
-    }
-  }
-  
-  return null
+    
+    return processed
+  })
 }
 
-// Process a single word for transliteration
-function transliterateWord(word: string): string {
-  if (!word) return ''
-  
-  // Remove any trailing punctuation for lookup
-  const cleanWord = word.replace(/[.,!?;:]+$/, '')
-  const lowerWord = cleanWord.toLowerCase()
-  
-  // Check word map first (exact match)
-  if (wordMap[lowerWord]) {
-    // Add back any trailing punctuation
-    const punct = word.substring(cleanWord.length)
-    return wordMap[lowerWord] + punct
-  }
-  
-  // Process the clean word (without punctuation)
-  let result = ''
-  let i = 0
-  const processWord = cleanWord.toLowerCase()
-  
-  while (i < cleanWord.length) {
-    const char = cleanWord[i]
-    const lowerChar = char.toLowerCase()
-    
-    // Try to match patterns from longest to shortest
-    let matched = false
-    
-    // Try 4-character patterns first
-    if (i + 4 <= cleanWord.length) {
-      const pattern = processWord.substring(i, i + 4)
-      // Handle special cases like "type" -> "टाइप"
-      if (pattern === 'type') {
-        result += 'टाइप'
-        i += 4
-        matched = true
-      }
-    }
-    
-    // Try 3-character patterns
-    if (!matched && i + 3 <= cleanWord.length) {
-      const pattern = processWord.substring(i, i + 3)
-      const cv = getConsonantVowel(cleanWord, i)
-      if (cv && cv.length >= 3) {
-        // Process the CV combination
-        if (cv.consonant) {
-          let cons = consonants[cv.consonant] || consonants[cv.consonant.toLowerCase()]
-          if (cons) {
-            let matra = matras[cv.vowel] || ''
-            result += cons + matra
-            i += cv.length
-            matched = true
-          }
-        }
-      }
-    }
-    
-    // Try 2-character patterns (consonant clusters or CV)
-    if (!matched && i + 2 <= cleanWord.length) {
-      const pattern = processWord.substring(i, i + 2)
-      
-      // Check for consonant clusters
-      if (consonants[pattern]) {
-        // Check if next char is a vowel
-        if (i + 2 < cleanWord.length && isVowel(processWord[i + 2])) {
-          const vowel = processWord[i + 2]
-          const matra = matras[vowel] || ''
-          result += consonants[pattern] + matra
-          i += 3
-          matched = true
-        } else {
-          // Consonant cluster with implicit 'a'
-          result += consonants[pattern]
-          i += 2
-          matched = true
-        }
-      } else {
-        // Try CV combination
-        const cv = getConsonantVowel(cleanWord, i)
-        if (cv && cv.length === 2) {
-          if (cv.consonant) {
-            let cons = consonants[cv.consonant] || consonants[cv.consonant.toLowerCase()]
-            if (cons) {
-              let matra = matras[cv.vowel] || ''
-              result += cons + matra
-              i += 2
-              matched = true
-            }
-          } else if (cv.vowel) {
-            const vowelChar = vowels[cv.vowel] || vowels[cv.vowel.toLowerCase()]
-            if (vowelChar) {
-              result += vowelChar
-              i += 2
-              matched = true
-            }
-          }
-        }
-      }
-    }
-    
-    // Try single character
-    if (!matched) {
-      // Handle retroflex (capital T, D, N)
-      if (char === 'T') {
-        if (i + 1 < cleanWord.length && isVowel(processWord[i + 1])) {
-          const vowel = processWord[i + 1]
-          const matra = matras[vowel] || ''
-          result += consonants['T'] + matra
-          i += 2
-        } else {
-          result += consonants['T']
-          i++
-        }
-        matched = true
-      } else if (char === 'D') {
-        if (i + 1 < cleanWord.length && isVowel(processWord[i + 1])) {
-          const vowel = processWord[i + 1]
-          const matra = matras[vowel] || ''
-          result += consonants['D'] + matra
-          i += 2
-        } else {
-          result += consonants['D']
-          i++
-        }
-        matched = true
-      } else if (char === 'N') {
-        if (i + 1 < cleanWord.length && isVowel(processWord[i + 1])) {
-          const vowel = processWord[i + 1]
-          const matra = matras[vowel] || ''
-          result += consonants['N'] + matra
-          i += 2
-        } else {
-          result += consonants['N']
-          i++
-        }
-        matched = true
-      } else if (consonants[lowerChar]) {
-        // Single consonant
-        if (i + 1 < cleanWord.length && isVowel(processWord[i + 1])) {
-          const vowel = processWord[i + 1]
-          const matra = matras[vowel] || ''
-          result += consonants[lowerChar] + matra
-          i += 2
-        } else {
-          // Consonant with implicit 'a'
-          result += consonants[lowerChar]
-          i++
-        }
-        matched = true
-      } else if (vowels[lowerChar]) {
-        // Standalone vowel
-        result += vowels[lowerChar]
-        i++
-        matched = true
-      } else {
-        // No match, keep original
-        result += char
-        i++
-      }
-    }
-  }
-  
-  // Add back any trailing punctuation
-  const punct = word.substring(cleanWord.length)
-  return result + punct
-}
-
+// Transliteration function using sanscript library
 function transliterateToHindi(text: string): string {
   if (!text.trim()) return ''
   
-  const words = text.split(/\s+/)
-  const result: string[] = []
-  
-  for (const word of words) {
-    // Remove punctuation temporarily, process, then add back
-    const punctuationMatch = word.match(/^([a-zA-Z]*)([^a-zA-Z]*)$/)
-    if (punctuationMatch) {
-      const [, wordPart, punctPart] = punctuationMatch
-      const transliterated = transliterateWord(wordPart)
-      result.push(transliterated + punctPart)
-    } else {
-      result.push(transliterateWord(word))
-    }
+  try {
+    // Preprocess to handle common lenient cases
+    const preprocessed = preprocessInput(text)
+    
+    // Use sanscript to transliterate from ITRANS (phonetic English) to Devanagari
+    // ITRANS is a popular transliteration scheme for Indian languages
+    // The library handles spaces and punctuation automatically
+    const transliterated = Sanscript.t(preprocessed, 'itrans', 'devanagari')
+    
+    // Ensure we return something - if transliteration returns empty, return original
+    return transliterated || text
+  } catch (error) {
+    // Fallback: return original text if transliteration fails
+    console.error('Transliteration error:', error)
+    return text
   }
-  
-  return result.join(' ')
 }
 
 export function PhoneticTyping() {
@@ -528,7 +262,7 @@ export function PhoneticTyping() {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">How to Use</h3>
         <div className="space-y-3 text-sm text-gray-700">
           <p>
-            <strong>Type phonetically:</strong> Type English words as they sound in the target language. Currently supports Hindi (Devanagari script).
+            <strong>Type phonetically:</strong> Type English words as they sound in Hindi using ITRANS transliteration scheme. Currently supports Hindi (Devanagari script).
           </p>
           <div className="grid md:grid-cols-2 gap-4 mt-4">
             <div>
@@ -536,20 +270,24 @@ export function PhoneticTyping() {
               <ul className="space-y-1 text-xs">
                 <li>namaste → नमस्ते</li>
                 <li>dhanyavaad → धन्यवाद</li>
-                <li>kripaya → कृपया</li>
+                <li>kripayaa → कृपया</li>
                 <li>haan → हाँ</li>
               </ul>
             </div>
             <div>
-              <p className="font-semibold mb-2">Vowels:</p>
+              <p className="font-semibold mb-2">Vowels (ITRANS):</p>
               <ul className="space-y-1 text-xs">
-                <li>a → अ, aa → आ</li>
-                <li>i → इ, ee → ई</li>
-                <li>u → उ, oo → ऊ</li>
+                <li>a → अ, aa/A → आ</li>
+                <li>i → इ, ii/I → ई</li>
+                <li>u → उ, uu/U → ऊ</li>
                 <li>e → ए, ai → ऐ</li>
+                <li>o → ओ, au → औ</li>
               </ul>
             </div>
           </div>
+          <p className="text-xs text-gray-600 mt-4">
+            <strong>Note:</strong> Uses ITRANS transliteration scheme. For retroflex consonants, use capital letters: T, D, N for ट, ड, ण.
+          </p>
         </div>
       </Card>
 
