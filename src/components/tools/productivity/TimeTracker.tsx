@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { PlayIcon, PauseIcon, StopIcon, PlusIcon, TrashIcon, ClockIcon, BarChartIcon } from 'lucide-react'
+import { PlayIcon, PauseIcon, Square, PlusIcon, TrashIcon, ClockIcon, BarChartIcon } from 'lucide-react'
 import { Toast } from '@/components/ui/Toast'
 import { AdUnit } from '@/components/ads/AdUnit'
 
@@ -343,7 +343,7 @@ export function TimeTracker() {
                         className="p-2 rounded-md bg-red-100 text-red-700 hover:bg-red-200"
                         title="Stop"
                       >
-                        <StopIcon className="h-5 w-5" />
+                        <Square className="h-5 w-5" />
                       </button>
                     )}
                     <button

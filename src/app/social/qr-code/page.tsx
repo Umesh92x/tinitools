@@ -1,5 +1,5 @@
 import ToolLayout from '@/components/layout/ToolLayout'
-import QrCodeGenerator from '@/components/tools/file/QrCodeGenerator'
+import { QrCodeGenerator } from '@/components/tools/file/QrCodeGenerator'
 import { generateMetadata } from '@/components/Seo'
 
 export const metadata = generateMetadata({
