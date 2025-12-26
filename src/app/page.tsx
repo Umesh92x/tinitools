@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { FloatingIcons } from '@/components/layout/FloatingIcons'
+import { ParticleEffect } from '@/components/layout/ParticleEffect'
 import { 
   DocumentTextIcon, 
   PhotoIcon, 
@@ -19,6 +20,7 @@ import {
   HeartIcon,
   BanknotesIcon,
   MagnifyingGlassIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { ContactForm } from '@/components/layout/ContactForm'
 
@@ -298,13 +300,58 @@ const popularTools = [
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showContent, setShowContent] = useState(false)
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false)
+  const [statsVisible, setStatsVisible] = useState(false)
+  const categoryScrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Start showing content after a brief delay
     const timer = setTimeout(() => {
       setShowContent(true)
     }, 200)
-    return () => clearTimeout(timer)
+    
+    // Trigger stats animation when they come into view
+    const statsTimer = setTimeout(() => {
+      setStatsVisible(true)
+    }, 800)
+    
+    return () => {
+      clearTimeout(timer)
+      clearTimeout(statsTimer)
+    }
+  }, [])
+
+  // Check if category scroll container has more content to scroll
+  useEffect(() => {
+    const checkScroll = () => {
+      if (categoryScrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = categoryScrollRef.current
+        // Show indicator if there's more content to scroll (with 10px threshold)
+        setShowScrollIndicator(scrollLeft + clientWidth < scrollWidth - 10)
+      }
+    }
+
+    // Check on mount with a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      checkScroll()
+    }, 100)
+
+    // Check on resize
+    window.addEventListener('resize', checkScroll)
+    
+    // Check on scroll
+    const scrollContainer = categoryScrollRef.current
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', checkScroll)
+    }
+
+    return () => {
+      clearTimeout(timeoutId)
+      window.removeEventListener('resize', checkScroll)
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', checkScroll)
+      }
+    }
   }, [])
 
   // Flatten all tools from all categories for search (deduplicated by href)
@@ -402,6 +449,9 @@ export default function Home() {
       {/* Floating Icons Background */}
       <FloatingIcons />
       
+      {/* Particle Effect */}
+      <ParticleEffect />
+      
       {/* Animated Background */}
       <div className="fixed inset-0 -z-10">
         {/* Base gradient */}
@@ -421,17 +471,44 @@ export default function Home() {
       </div>
 
       {/* Hero Section */}
-      <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+      <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+        {/* Animated Background Elements for Hero */}
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          {/* Rotating gradient orbs */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-indigo-400/40 via-purple-400/40 to-pink-400/40 dark:from-indigo-600/20 dark:via-purple-600/20 dark:to-pink-600/20 rounded-full blur-3xl animate-rotate-orb"></div>
+          <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/40 via-cyan-400/40 to-indigo-400/40 dark:from-blue-600/20 dark:via-cyan-600/20 dark:to-indigo-600/20 rounded-full blur-3xl animate-rotate-orb animation-delay-2000"></div>
+          
+          {/* Pulsing orbs */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full animate-pulse-orb bg-[radial-gradient(circle,rgba(129,140,248,0.3)_0%,rgba(167,139,250,0.2)_50%,transparent_100%)] dark:bg-[radial-gradient(circle,rgba(99,102,241,0.2)_0%,rgba(139,92,246,0.1)_50%,transparent_100%)]"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full animate-pulse-orb animation-delay-2000 bg-[radial-gradient(circle,rgba(244,114,182,0.3)_0%,rgba(96,165,250,0.2)_50%,transparent_100%)] dark:bg-[radial-gradient(circle,rgba(236,72,153,0.2)_0%,rgba(59,130,246,0.1)_50%,transparent_100%)]"></div>
+          
+          {/* Floating orbs */}
+          <div className="absolute top-1/4 right-1/3 w-64 h-64 bg-gradient-to-br from-purple-400/30 to-pink-400/30 dark:from-purple-600/15 dark:to-pink-600/15 rounded-full blur-2xl animate-float-orb"></div>
+          <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-gradient-to-br from-indigo-400/30 to-blue-400/30 dark:from-indigo-600/15 dark:to-blue-600/15 rounded-full blur-2xl animate-float-orb animation-delay-4000"></div>
+          
+          {/* Radial pulse gradients */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full animate-radial-pulse bg-[radial-gradient(circle,rgba(129,140,248,0.2)_0%,rgba(167,139,250,0.15)_50%,transparent_100%)] dark:bg-[radial-gradient(circle,rgba(99,102,241,0.1)_0%,rgba(139,92,246,0.05)_50%,transparent_100%)]"></div>
+          
+          {/* Mesh gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-200/20 via-purple-200/20 via-pink-200/20 to-blue-200/20 dark:from-indigo-800/10 dark:via-purple-800/10 dark:via-pink-800/10 dark:to-blue-800/10 animate-mesh-gradient"></div>
+          
+          {/* Rotating rings */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border-2 border-indigo-300/20 dark:border-indigo-700/10 rounded-full animate-rotate-ring"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border-2 border-purple-300/20 dark:border-purple-700/10 rounded-full animate-rotate-ring" style={{ animationDirection: 'reverse', animationDuration: '25s' }}></div>
+          
+          {/* Morphing blobs */}
+          <div className="absolute top-1/3 left-1/5 w-80 h-80 bg-gradient-to-br from-indigo-300/25 to-purple-300/25 dark:from-indigo-700/12 dark:to-purple-700/12 blur-3xl animate-blob-morph"></div>
+          <div className="absolute bottom-1/3 right-1/5 w-96 h-96 bg-gradient-to-br from-pink-300/25 to-blue-300/25 dark:from-pink-700/12 dark:to-blue-700/12 blur-3xl animate-blob-morph animation-delay-4000"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 relative z-10">
           <div className="text-center">
-            <h1 className={`text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6 transition-all duration-1000 ${
-              showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}>
-              <span className="inline-block bg-gradient-to-r from-indigo-600 via-purple-600 via-pink-600 to-blue-600 dark:from-indigo-400 dark:via-purple-400 dark:via-pink-400 dark:to-blue-400 bg-clip-text text-transparent animate-gradient-text">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6 glide-reveal-group cursor-pointer">
+              <span className="inline-block bg-gradient-to-r from-indigo-600 via-purple-600 via-pink-600 to-blue-600 dark:from-indigo-400 dark:via-purple-400 dark:via-pink-400 dark:to-blue-400 bg-clip-text text-transparent animate-gradient-text glide-reveal-hover">
                 Transform Your Workflow
               </span>
               <br />
-              <span className="inline-block bg-gradient-to-r from-blue-600 via-cyan-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-cyan-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent animate-gradient-text animation-delay-1000">
+              <span className="inline-block bg-gradient-to-r from-blue-600 via-cyan-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-cyan-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent animate-gradient-text glide-reveal-hover-right">
                 With Powerful Tools
               </span>
             </h1>
@@ -455,11 +532,14 @@ export default function Home() {
                 { name: 'Data', href: '/data', icon: TableCellsIcon },
                 { name: 'File', href: '/file', icon: FolderIcon },
                 { name: 'Productivity', href: '/productivity', icon: ClipboardIcon },
-              ].map((cat) => (
+              ].map((cat, index) => (
                 <Link
                   key={cat.href}
                   href={cat.href}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all duration-200 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:scale-105 hover:shadow-md"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all duration-200 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:scale-105 hover:shadow-md magnetic-hover"
+                  style={{
+                    animation: showContent ? `bounce-in 0.6s ease-out ${index * 100}ms forwards` : 'none',
+                  }}
                 >
                   <cat.icon className="h-4 w-4" />
                   {cat.name}
@@ -482,7 +562,7 @@ export default function Home() {
                   placeholder="Search for tools..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="block w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  className="block w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 shadow-lg hover:shadow-xl transition-all duration-300 focus:scale-[1.02]"
                 />
               </div>
             </div>
@@ -491,23 +571,28 @@ export default function Home() {
       </div>
 
       {/* Statistics Section */}
-      <div className="relative bg-indigo-600/90 dark:bg-indigo-800/90 backdrop-blur-sm text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative bg-indigo-600/90 dark:bg-indigo-800/90 backdrop-blur-sm text-white py-12 overflow-hidden">
+        {/* Wave animation overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-wave"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl sm:text-4xl font-bold mb-2">200+</div>
+            <div className={`transition-all duration-700 ${statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '0ms' }}>
+              <div className={`text-3xl sm:text-4xl font-bold mb-2 ${statsVisible ? 'animate-count-up' : ''}`}>200+</div>
               <div className="text-indigo-100 text-sm sm:text-base">Online Tools</div>
             </div>
-            <div>
-              <div className="text-3xl sm:text-4xl font-bold mb-2">100%</div>
+            <div className={`transition-all duration-700 ${statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '150ms' }}>
+              <div className={`text-3xl sm:text-4xl font-bold mb-2 ${statsVisible ? 'animate-count-up' : ''}`}>100%</div>
               <div className="text-indigo-100 text-sm sm:text-base">Free Forever</div>
             </div>
-            <div>
-              <div className="text-3xl sm:text-4xl font-bold mb-2">No Sign-Up</div>
+            <div className={`transition-all duration-700 ${statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '300ms' }}>
+              <div className={`text-3xl sm:text-4xl font-bold mb-2 ${statsVisible ? 'animate-count-up' : ''}`}>No Sign-Up</div>
               <div className="text-indigo-100 text-sm sm:text-base">Required</div>
             </div>
-            <div>
-              <div className="text-3xl sm:text-4xl font-bold mb-2">Privacy</div>
+            <div className={`transition-all duration-700 ${statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '450ms' }}>
+              <div className={`text-3xl sm:text-4xl font-bold mb-2 ${statsVisible ? 'animate-count-up' : ''}`}>Privacy</div>
               <div className="text-indigo-100 text-sm sm:text-base">Focused</div>
             </div>
           </div>
@@ -528,15 +613,18 @@ export default function Home() {
 
           {filteredTools.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredTools.map((tool) => (
+              {filteredTools.map((tool, index) => (
                 <Link
                   key={tool.href}
                   href={tool.href}
-                  className="group bg-white dark:bg-gray-700 p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:-translate-y-1"
+                  className="group bg-white dark:bg-gray-700 p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 magnetic-hover"
+                  style={{
+                    animation: `stagger-fade-in 0.5s ease-out ${index * 50}ms forwards`,
+                  }}
                 >
                   <div className="flex items-start gap-4 mb-3">
-                    <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl group-hover:from-indigo-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/50 dark:group-hover:to-indigo-700/50 transition-all duration-300">
-                      <tool.icon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+                    <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl group-hover:from-indigo-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/50 dark:group-hover:to-indigo-700/50 transition-all duration-300 group-hover:rotate-6 group-hover:scale-110">
+                      <tool.icon className="h-7 w-7 text-indigo-600 dark:text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-1">
@@ -549,7 +637,7 @@ export default function Home() {
                   {/* Free badge */}
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-600">
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse-glow"></span>
                       Free
                     </span>
                   </div>
@@ -578,22 +666,26 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {popularTools.map((tool) => (
+          {popularTools.map((tool, index) => (
             <Link
               key={tool.href}
               href={tool.href}
-              className="group relative bg-white dark:bg-gray-700 p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:-translate-y-1"
+              className="group relative bg-white dark:bg-gray-700 p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 magnetic-hover"
+              style={{
+                animation: showContent ? `stagger-fade-in 0.6s ease-out ${index * 100}ms forwards` : 'none',
+              }}
             >
-              {/* Badge */}
+              {/* Badge with shimmer effect */}
               {tool.badge && (
-                <span className="absolute top-3 right-3 px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
-                  {tool.badge}
+                <span className="absolute top-3 right-3 px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 relative overflow-hidden">
+                  <span className="absolute inset-0 animate-shimmer"></span>
+                  <span className="relative z-10">{tool.badge}</span>
                 </span>
               )}
               
               <div className="flex items-start gap-4 mb-3">
-                <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl group-hover:from-indigo-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/50 dark:group-hover:to-indigo-700/50 transition-all duration-300">
-                  <tool.icon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+                <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl group-hover:from-indigo-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/50 dark:group-hover:to-indigo-700/50 transition-all duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:shadow-lg">
+                  <tool.icon className="h-7 w-7 text-indigo-600 dark:text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-1">
@@ -611,7 +703,7 @@ export default function Home() {
               {/* Free badge */}
               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-600">
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse-glow"></span>
                   Free • No Sign-Up
                 </span>
               </div>
@@ -635,40 +727,65 @@ export default function Home() {
             </div>
 
             {/* Improved Category Navigation - Horizontal Scroll */}
-            <div className="mb-8 overflow-x-auto pb-4 -mx-4 px-4">
-              <div className="flex gap-3 min-w-max">
-                {categories.map((category) => (
-                  <Link
-                    key={category.href}
-                    href={category.href}
-                    className="group flex items-center gap-3 px-5 py-3 bg-white dark:bg-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:-translate-y-0.5 min-w-[200px]"
-                  >
-                    <div className="p-2 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-lg group-hover:from-indigo-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/50 dark:group-hover:to-indigo-700/50 transition-all duration-200">
-                      <category.icon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-sm">
-                        {category.name}
-                      </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
-                        {category.featured.length} tools
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+            <div className="mb-8 relative -mx-4 px-4">
+              <div 
+                ref={categoryScrollRef}
+                className="overflow-x-auto pb-4 no-scrollbar"
+              >
+                <div className="flex gap-3 min-w-max">
+                  {categories.map((category) => (
+                    <Link
+                      key={category.href}
+                      href={category.href}
+                      className="group flex items-center gap-3 px-5 py-3 bg-white dark:bg-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:-translate-y-0.5 min-w-[200px]"
+                    >
+                      <div className="p-2 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-lg group-hover:from-indigo-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/50 dark:group-hover:to-indigo-700/50 transition-all duration-200 group-hover:rotate-6 group-hover:scale-110">
+                        <category.icon className="h-5 w-5 text-indigo-600 dark:text-indigo-400 transition-transform duration-200 group-hover:scale-110" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-sm">
+                          {category.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                          {category.featured.length} tools
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
+              {/* Scroll Indicator - Lights up when more content is available */}
+              {showScrollIndicator && (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none z-10 pr-2">
+                  <div className="flex items-center gap-2 bg-gradient-to-l from-white via-white/95 to-transparent dark:from-gray-900 dark:via-gray-900/95 dark:to-transparent pl-16 py-4">
+                    <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                      scroll for more
+                    </span>
+                    <div className="relative">
+                      <ChevronRightIcon className="h-7 w-7 text-indigo-500 dark:text-indigo-400 animate-scroll-indicator" />
+                      <ChevronRightIcon className="h-7 w-7 text-indigo-500 dark:text-indigo-400 animate-scroll-indicator-delayed absolute inset-0" />
+                    </div>
+                    <div className="relative">
+                      <ChevronRightIcon className="h-6 w-6 text-indigo-400 dark:text-indigo-500 animate-scroll-indicator-delayed-2" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Category Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {categories.map((category) => (
+              {categories.map((category, index) => (
               <div
                 key={category.name}
-                className="group bg-white dark:bg-gray-700 p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:-translate-y-1"
+                className="group bg-white dark:bg-gray-700 p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 magnetic-hover"
+                style={{
+                  animation: showContent ? `stagger-fade-in 0.6s ease-out ${index * 50}ms forwards` : 'none',
+                }}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl group-hover:from-indigo-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/50 dark:group-hover:to-indigo-700/50 transition-all duration-300">
-                    <category.icon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+                  <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl group-hover:from-indigo-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/50 dark:group-hover:to-indigo-700/50 transition-all duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:shadow-lg">
+                    <category.icon className="h-7 w-7 text-indigo-600 dark:text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
                   </div>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     <Link href={category.href}>
