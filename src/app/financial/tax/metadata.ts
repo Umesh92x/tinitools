@@ -1,7 +1,8 @@
-import { generateMetadata } from '@/components/Seo'
+import { generateMetadata } from '@/lib/metadata'
 
 export const metadata = generateMetadata({
-  title: 'Income Tax Calculator - Calculate Your Tax Liability',
-  description: 'Calculate your income tax based on the latest tax slabs. Account for deductions and see your effective tax rate with our easy-to-use tax calculator.',
+  title: 'Income Tax Calculator',
+  description: 'Free income tax calculator - Calculate your tax liability based on latest tax slabs. Account for deductions and see effective tax rate. No signup required.',
+  path: '/financial/tax',
   keywords: ['income tax calculator', 'tax calculator', 'tax slab calculator', 'income tax india', 'tax deductions calculator'],
 }) 

@@ -37,7 +37,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { category: 'social', tools: ['hashtags', 'counter', 'caption'] },
     { category: 'pdf', tools: ['to-image', 'merge', 'from-text', 'split', 'rotate', 'delete-pages', 'sign'] },
     { category: 'misc', tools: ['random', 'coin-flip', 'pomodoro', 'dice', 'stopwatch', 'countdown'] },
-    { category: 'educational', tools: ['multiplication-table', 'periodic-table', 'math-formulas', 'calculator'] },
     { category: 'data', tools: ['csv-to-json', 'json-to-csv', 'json-formatter', 'xml-formatter', 'yaml-validator', 'base64'] },
     { category: 'file', tools: ['hash', 'qr-code', 'size-converter', 'type-detector', 'metadata', 'duplicate-checker', 'name-formatter'] },
     { category: 'productivity', tools: ['notes', 'todo', 'habits', 'reading-time', 'typing-speed', 'time-tracker', 'goal-tracker'] },

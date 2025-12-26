@@ -1,7 +1,8 @@
-import { generateMetadata } from '@/components/Seo'
+import { generateMetadata } from '@/lib/metadata'
 
 export const metadata = generateMetadata({
-  title: 'Compound Interest Calculator - Calculate Investment Growth',
-  description: 'Calculate compound interest with different compounding frequencies. See how your investment grows over time with our detailed year-by-year breakdown.',
+  title: 'Compound Interest Calculator',
+  description: 'Free compound interest calculator - Calculate investment growth with different compounding frequencies. See year-by-year breakdown. No signup required.',
+  path: '/financial/compound-interest',
   keywords: ['compound interest calculator', 'investment calculator', 'interest calculator', 'compound interest', 'investment growth calculator'],
 }) 
