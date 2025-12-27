@@ -1,6 +1,9 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import { RelatedTools } from '@/components/shared/RelatedTools'
+import { ToolJsonLd } from '@/components/layout/ToolJsonLd'
 
 type ActivityLevel = 'sedentary' | 'moderate' | 'active'
 type Climate = 'temperate' | 'hot' | 'humid'
@@ -58,10 +61,29 @@ export default function WaterIntakeCalculator() {
     setError(null)
   }
 
+  const relatedTools = [
+    { name: 'Calorie Calculator', href: '/health-fitness/calorie-calculator' },
+    { name: 'Sleep Time Calculator', href: '/health-fitness/sleep-calculator' },
+    { name: 'Heart Rate Zone Calculator', href: '/health-fitness/heart-rate' },
+    { name: 'Exercise Rep Counter', href: '/health-fitness/rep-counter' },
+  ]
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Water Intake Calculator</h1>
+    <>
+      <ToolJsonLd
+        toolName="Water Intake Calculator"
+        description="Free water intake calculator - Calculate your daily water needs based on weight, activity level, and climate. Get personalized hydration recommendations. No signup required."
+        category="Health & Fitness"
+        url="/health-fitness/water-intake"
+      />
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <Breadcrumbs items={[
+            { label: 'Home', href: '/' },
+            { label: 'Health & Fitness', href: '/health-fitness' },
+            { label: 'Water Intake Calculator' },
+          ]} />
+          <h1 className="text-3xl font-bold mb-6">Water Intake Calculator</h1>
         <p className="text-gray-600 mb-4">
           Calculate your daily water intake needs based on your weight, activity level, and climate.
         </p>
@@ -190,7 +212,9 @@ export default function WaterIntakeCalculator() {
             )}
           </div>
         </form>
+        <RelatedTools tools={relatedTools} currentTool="/health-fitness/water-intake" />
       </div>
     </div>
+    </>
   )
 } 

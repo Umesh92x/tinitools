@@ -2,6 +2,9 @@
 
 import { FormEvent, useState } from 'react'
 import { format, addMinutes, subMinutes } from 'date-fns'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import { RelatedTools } from '@/components/shared/RelatedTools'
+import { ToolJsonLd } from '@/components/layout/ToolJsonLd'
 
 type CalculationType = 'bedtime' | 'wakeup'
 
@@ -55,10 +58,29 @@ export default function SleepCalculator() {
     setError(null)
   }
 
+  const relatedTools = [
+    { name: 'Calorie Calculator', href: '/health-fitness/calorie-calculator' },
+    { name: 'Water Intake Calculator', href: '/health-fitness/water-intake' },
+    { name: 'Heart Rate Zone Calculator', href: '/health-fitness/heart-rate' },
+    { name: 'Exercise Rep Counter', href: '/health-fitness/rep-counter' },
+  ]
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Sleep Time Calculator</h1>
+    <>
+      <ToolJsonLd
+        toolName="Sleep Time Calculator"
+        description="Free sleep time calculator - Calculate optimal bedtime and wake-up times based on sleep cycles. Get personalized recommendations for better sleep. No signup required."
+        category="Health & Fitness"
+        url="/health-fitness/sleep-calculator"
+      />
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <Breadcrumbs items={[
+            { label: 'Home', href: '/' },
+            { label: 'Health & Fitness', href: '/health-fitness' },
+            { label: 'Sleep Time Calculator' },
+          ]} />
+          <h1 className="text-3xl font-bold mb-6">Sleep Time Calculator</h1>
         <p className="text-gray-600 mb-3">
           Calculate the best time to wake up or go to bed based on sleep cycles.
         </p>
@@ -205,7 +227,9 @@ export default function SleepCalculator() {
             <li>• Exercise regularly, but not too close to bedtime</li>
           </ul>
         </div>
+        <RelatedTools tools={relatedTools} currentTool="/health-fitness/sleep-calculator" />
       </div>
     </div>
+    </>
   )
 } 

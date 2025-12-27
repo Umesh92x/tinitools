@@ -1,6 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import { RelatedTools } from '@/components/shared/RelatedTools'
+import { ToolJsonLd } from '@/components/layout/ToolJsonLd'
 
 type Gender = 'male' | 'female'
 type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active'
@@ -434,10 +437,29 @@ export default function CalorieCalculator() {
     setTdeeValue(null)
   }
 
+  const relatedTools = [
+    { name: 'Water Intake Calculator', href: '/health-fitness/water-intake' },
+    { name: 'BMI Calculator', href: '/math/bmi' },
+    { name: 'Sleep Time Calculator', href: '/health-fitness/sleep-calculator' },
+    { name: 'Heart Rate Zone Calculator', href: '/health-fitness/heart-rate' },
+  ]
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Calorie Calculator</h1>
+    <>
+      <ToolJsonLd
+        toolName="Calorie Calculator"
+        description="Free calorie calculator - Calculate your daily calorie needs based on age, weight, height, activity level, and goals. Get personalized diet plans. No signup required."
+        category="Health & Fitness"
+        url="/health-fitness/calorie-calculator"
+      />
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <Breadcrumbs items={[
+            { label: 'Home', href: '/' },
+            { label: 'Health & Fitness', href: '/health-fitness' },
+            { label: 'Calorie Calculator' },
+          ]} />
+          <h1 className="text-3xl font-bold mb-6">Calorie Calculator</h1>
         <p className="text-gray-600 mb-4">
           Calculate your daily calorie needs based on your personal characteristics and goals.
         </p>
@@ -668,7 +690,9 @@ export default function CalorieCalculator() {
             )}
           </div>
         </form>
+        <RelatedTools tools={relatedTools} currentTool="/health-fitness/calorie-calculator" />
       </div>
     </div>
+    </>
   )
 } 

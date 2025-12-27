@@ -1,27 +1,50 @@
 import { BMICalculator } from '@/components/tools/math/BMICalculator'
-import { generateMetadata } from '@/components/Seo'
+import { generateMetadata } from '@/lib/metadata'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import { RelatedTools } from '@/components/shared/RelatedTools'
+import { ToolJsonLd } from '@/components/layout/ToolJsonLd'
 
 export const metadata = generateMetadata({
   title: 'BMI Calculator',
-  description: 'Calculate your Body Mass Index (BMI) using metric or imperial units. Get instant health insights based on your BMI score.',
+  description: 'Free BMI calculator - Calculate your Body Mass Index using metric or imperial units instantly. Get instant health insights based on your BMI score. No signup required.',
+  path: '/math/bmi',
   keywords: ['BMI calculator', 'body mass index', 'BMI', 'health calculator', 'weight calculator', 'BMI categories', 'BMI chart'],
 })
 
 export default function BMICalculatorPage() {
+  const relatedTools = [
+    { name: 'Calorie Calculator', href: '/health-fitness/calorie-calculator' },
+    { name: 'Calculator', href: '/math/calculator' },
+    { name: 'Unit Converter', href: '/math/unit-converter' },
+    { name: 'Age Calculator', href: '/math/age' },
+  ]
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900">BMI Calculator</h1>
-        <p className="mt-4 text-xl text-gray-600">
-          Calculate your Body Mass Index (BMI) and understand what it means for your health
-        </p>
-      </div>
+    <>
+      <ToolJsonLd
+        toolName="BMI Calculator"
+        description="Free BMI calculator - Calculate your Body Mass Index using metric or imperial units instantly. Get instant health insights based on your BMI score. No signup required."
+        category="Math & Calculations"
+        url="/math/bmi"
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Breadcrumbs items={[
+          { label: 'Home', href: '/' },
+          { label: 'Math & Calculations', href: '/math' },
+          { label: 'BMI Calculator' },
+        ]} />
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">BMI Calculator</h1>
+          <p className="mt-4 text-xl text-gray-600 dark:text-gray-300">
+            Calculate your Body Mass Index (BMI) and understand what it means for your health
+          </p>
+        </div>
 
-      <BMICalculator />
+        <BMICalculator />
 
-      <div className="mt-12 bg-white p-6 rounded-lg shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">About BMI</h2>
-        <div className="space-y-4 text-gray-600">
+      <div className="mt-12 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">About BMI</h2>
+        <div className="space-y-4 text-gray-600 dark:text-gray-300">
           <p>
             Body Mass Index (BMI) is a simple measure that uses your height and weight to work out if your weight is healthy.
             The BMI calculation divides an adult's weight in kilograms by their height in metres squared.
@@ -40,6 +63,8 @@ export default function BMICalculatorPage() {
           </p>
         </div>
       </div>
+      <RelatedTools tools={relatedTools} currentTool="/math/bmi" />
     </div>
+    </>
   )
 } 

@@ -1,6 +1,9 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import { RelatedTools } from '@/components/shared/RelatedTools'
+import { ToolJsonLd } from '@/components/layout/ToolJsonLd'
 
 interface HeartRateZone {
   name: string;
@@ -104,10 +107,29 @@ export default function HeartRateCalculator() {
     setZones(newZones)
   }
 
+  const relatedTools = [
+    { name: 'Calorie Calculator', href: '/health-fitness/calorie-calculator' },
+    { name: 'Exercise Rep Counter', href: '/health-fitness/rep-counter' },
+    { name: 'Water Intake Calculator', href: '/health-fitness/water-intake' },
+    { name: 'Sleep Time Calculator', href: '/health-fitness/sleep-calculator' },
+  ]
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Heart Rate Zone Calculator</h1>
+    <>
+      <ToolJsonLd
+        toolName="Heart Rate Zone Calculator"
+        description="Free heart rate zone calculator - Calculate your training zones based on age and resting heart rate. Perfect for optimizing workouts. No signup required."
+        category="Health & Fitness"
+        url="/health-fitness/heart-rate"
+      />
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <Breadcrumbs items={[
+            { label: 'Home', href: '/' },
+            { label: 'Health & Fitness', href: '/health-fitness' },
+            { label: 'Heart Rate Zone Calculator' },
+          ]} />
+          <h1 className="text-3xl font-bold mb-6">Heart Rate Zone Calculator</h1>
         <p className="text-gray-600 mb-3">
           Calculate your heart rate training zones based on your age and resting heart rate.
         </p>
@@ -232,7 +254,9 @@ export default function HeartRateCalculator() {
             )}
           </div>
         </form>
+        <RelatedTools tools={relatedTools} currentTool="/health-fitness/heart-rate" />
       </div>
     </div>
+    </>
   )
 } 

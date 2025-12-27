@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import { RelatedTools } from '@/components/shared/RelatedTools'
+import { ToolJsonLd } from '@/components/layout/ToolJsonLd'
 
 interface Exercise {
   id: string;
@@ -152,10 +155,29 @@ export default function RepCounter() {
     setCurrentRep(0);
   };
 
+  const relatedTools = [
+    { name: 'Calorie Calculator', href: '/health-fitness/calorie-calculator' },
+    { name: 'Heart Rate Zone Calculator', href: '/health-fitness/heart-rate' },
+    { name: 'Water Intake Calculator', href: '/health-fitness/water-intake' },
+    { name: 'Sleep Time Calculator', href: '/health-fitness/sleep-calculator' },
+  ]
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Exercise Rep Counter</h1>
+    <>
+      <ToolJsonLd
+        toolName="Exercise Rep Counter"
+        description="Free exercise rep counter - Track your exercise repetitions with built-in timer. Set custom rest periods between sets. Perfect for workouts. No signup required."
+        category="Health & Fitness"
+        url="/health-fitness/rep-counter"
+      />
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <Breadcrumbs items={[
+            { label: 'Home', href: '/' },
+            { label: 'Health & Fitness', href: '/health-fitness' },
+            { label: 'Exercise Rep Counter' },
+          ]} />
+          <h1 className="text-3xl font-bold mb-6">Exercise Rep Counter</h1>
         <p className="text-gray-600 mb-2">
           Create a simple workout, then track sets, reps, and rest with built-in timers.
         </p>
@@ -363,7 +385,9 @@ export default function RepCounter() {
             )}
           </div>
         )}
+        <RelatedTools tools={relatedTools} currentTool="/health-fitness/rep-counter" />
       </div>
     </div>
+    </>
   )
 } 
