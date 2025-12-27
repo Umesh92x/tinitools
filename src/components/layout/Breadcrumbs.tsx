@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Script from 'next/script'
 import config from '@/lib/config'
+import { useEffect, useState } from 'react'
 
 interface BreadcrumbItem {
   label: string
@@ -14,6 +15,12 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -27,12 +34,14 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
 
   return (
     <>
-      <Script
-        id="breadcrumb-json-ld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        strategy="afterInteractive"
-      />
+      {mounted && (
+        <Script
+          id="breadcrumb-json-ld"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          strategy="afterInteractive"
+        />
+      )}
       <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6" aria-label="Breadcrumb">
         {items.map((item, index) => (
           <span key={index} className="flex items-center">
