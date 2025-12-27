@@ -15,37 +15,56 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
   useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const scriptId = 'breadcrumb-json-ld'
-    
-    // Remove existing script if it exists
-    const existingScript = document.getElementById(scriptId)
-    if (existingScript) {
-      existingScript.remove()
+    // Safety check: ensure we're on client and have required values
+    if (typeof window === 'undefined' || !document || !document.head) {
+      return
     }
 
-    const jsonLd = {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: items.map((item, index) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        name: item.label,
-        item: item.href ? `${config.siteUrl}${item.href}` : undefined,
-      })),
-    }
+    // Small delay to ensure DOM is ready (especially on mobile)
+    const timeoutId = setTimeout(() => {
+      try {
+        const scriptId = 'breadcrumb-json-ld'
+        
+        // Remove existing script if it exists
+        const existingScript = document.getElementById(scriptId)
+        if (existingScript) {
+          existingScript.remove()
+        }
 
-    const script = document.createElement('script')
-    script.id = scriptId
-    script.type = 'application/ld+json'
-    script.text = JSON.stringify(jsonLd)
-    document.head.appendChild(script)
+        const jsonLd = {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: items.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.label,
+            item: item.href ? `${config.siteUrl}${item.href}` : undefined,
+          })),
+        }
+
+        const script = document.createElement('script')
+        script.id = scriptId
+        script.type = 'application/ld+json'
+        script.text = JSON.stringify(jsonLd)
+        
+        if (document.head) {
+          document.head.appendChild(script)
+        }
+      } catch (error) {
+        // Silently fail - don't break the app if JSON-LD injection fails
+        console.warn('Failed to inject breadcrumb JSON-LD:', error)
+      }
+    }, 0)
 
     return () => {
-      const scriptToRemove = document.getElementById(scriptId)
-      if (scriptToRemove) {
-        scriptToRemove.remove()
+      clearTimeout(timeoutId)
+      try {
+        const scriptToRemove = document.getElementById('breadcrumb-json-ld')
+        if (scriptToRemove) {
+          scriptToRemove.remove()
+        }
+      } catch (error) {
+        // Silently fail on cleanup
       }
     }
   }, [items])
