@@ -26,11 +26,6 @@ export default function ToolLayout({
   children 
 }: ToolLayoutProps) {
   const pathname = usePathname()
-  const [mounted, setMounted] = useState(false)
-  
-  useEffect(() => {
-    setMounted(true)
-  }, [])
   
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
@@ -38,12 +33,11 @@ export default function ToolLayout({
     { label: title },
   ]
 
-  // Only render JSON-LD after mount to avoid hydration issues
-  const currentPath = mounted && pathname ? pathname : ''
+  const currentPath = pathname || ''
 
   return (
     <>
-      {mounted && currentPath && (
+      {currentPath && (
         <ToolJsonLd
           toolName={title}
           description={description}
