@@ -5,21 +5,35 @@ interface Config {
   isProd: boolean;
 }
 
+// Get site URL with fallbacks
+function getSiteUrl(): string {
+  // First, try environment variable
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  
+  // On client side, try to get from window.location
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    return `${protocol}//${host}`;
+  }
+  
+  // Fallback for server-side during build
+  return 'https://tinitools.com';
+}
+
 export const config: Config = {
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  siteUrl: getSiteUrl(),
   gaId: process.env.NEXT_PUBLIC_GA_ID,
   isDev: process.env.NODE_ENV === 'development',
   isProd: process.env.NODE_ENV === 'production',
 }
 
-// Validate required environment variables in production
-if (config.isProd) {
-  const required = ['NEXT_PUBLIC_SITE_URL'];
-  for (const key of required) {
-    if (!process.env[key]) {
-      throw new Error(`Missing required environment variable: ${key}`);
-    }
-  }
+// Only validate on server-side during build (not on client)
+if (typeof window === 'undefined' && config.isProd && !process.env.NEXT_PUBLIC_SITE_URL) {
+  // Warn but don't throw - use fallback instead
+  console.warn('Warning: NEXT_PUBLIC_SITE_URL not set. Using fallback URL.');
 }
 
 export default config; 
